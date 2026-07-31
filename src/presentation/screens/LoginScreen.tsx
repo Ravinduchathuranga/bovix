@@ -18,8 +18,8 @@ export const LoginScreen: React.FC = () => {
   const { login, signUp, loginWithGoogle } = useAuth();
   const [isSignUp, setIsSignUp] = useState(false);
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('farmer@bovix.com');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -175,10 +175,6 @@ export const LoginScreen: React.FC = () => {
                 </View>
               )}
             </TouchableOpacity>
-          </View>
-
-          <View style={styles.securityNote}>
-            <Text style={styles.securityText}>🔒 Firebase Authenticated • Secrets Protected</Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
