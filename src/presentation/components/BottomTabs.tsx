@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-export type TabType = 'dashboard' | 'milking' | 'settings';
+export type TabType = 'dashboard' | 'milking' | 'reconciliation' | 'settings';
 
 interface BottomTabsProps {
   activeTab: TabType;
@@ -32,6 +32,17 @@ export const BottomTabs: React.FC<BottomTabsProps> = ({ activeTab, onSelectTab }
           <Text style={styles.tabIcon}>🥛</Text>
           <Text style={[styles.tabLabel, activeTab === 'milking' && styles.activeTabLabel]}>
             Local Log
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.tabButton, activeTab === 'reconciliation' && styles.activeTabButton]}
+          onPress={() => onSelectTab('reconciliation')}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.tabIcon}>⚖️</Text>
+          <Text style={[styles.tabLabel, activeTab === 'reconciliation' && styles.activeTabLabel]}>
+            Compare Slip
           </Text>
         </TouchableOpacity>
 
@@ -74,10 +85,10 @@ const styles = StyleSheet.create({
     borderTopColor: '#10B981',
   },
   tabIcon: {
-    fontSize: 20,
+    fontSize: 18,
   },
   tabLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#94A3B8',
     fontWeight: '600',
     marginTop: 2,

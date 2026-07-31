@@ -11,6 +11,12 @@ export class AddCattleUseCase {
     if (!cattleData.name.trim()) {
       throw new Error('Cattle Name is required.');
     }
+    if (cattleData.ageYears < 0 || cattleData.ageMonths < 0) {
+      throw new Error('Age cannot be negative.');
+    }
+    if (cattleData.calvesDelivered < 0) {
+      throw new Error('Number of calves delivered cannot be negative.');
+    }
     return await this.cattleRepository.addCattle(cattleData);
   }
 }

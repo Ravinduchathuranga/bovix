@@ -6,29 +6,22 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  FlatList,
-  Modal,
-  TextInput,
-  Alert,
+  Image,
 } from 'react-native';
-import { useAuth } from '../context/AuthContext';
-import { getDashboardDataUseCase, addCattleUseCase } from '../../di/container';
-import { Cattle, DashboardMetrics } from '../../domain/entities/cattle';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuth } from '../context/AuthContext';
+import { getDashboardDataUseCase } from '../../di/container';
+import { Cattle, DashboardMetrics } from '../../domain/entities/cattle';
 
-export const DashboardScreen: React.FC = () => {
+interface DashboardScreenProps {
+  onNavigateToAddCattle?: () => void;
+}
+
+export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigateToAddCattle }) => {
   const { user, logout } = useAuth();
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [recentCattle, setRecentCattle] = useState<Cattle[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Add Cattle Modal state
-  const [modalVisible, setModalVisible] = useState(false);
-  const [newTag, setNewTag] = useState('');
-  const [newName, setNewName] = useState('');
-  const [newBreed, setNewBreed] = useState('Holstein Friesian');
-  const [newYield, setNewYield] = useState('20.0');
-  const [addingCattle, setAddingCattle] = useState(false);
 
   const loadData = async () => {
     setLoading(true);
@@ -46,35 +39,6 @@ export const DashboardScreen: React.FC = () => {
   useEffect(() => {
     loadData();
   }, []);
-
-  const handleAddCattle = async () => {
-    if (!newTag.trim() || !newName.trim()) {
-      Alert.alert('Validation Error', 'Please fill in Tag Number and Name.');
-      return;
-    }
-    setAddingCattle(true);
-    try {
-      await addCattleUseCase.execute({
-        tagNumber: newTag,
-        name: newName,
-        breed: newBreed,
-        ageYears: 3,
-        gender: 'female',
-        status: 'lactating',
-        dailyMilkYieldLiters: parseFloat(newYield) || 0,
-        lastMilkingTime: 'Just now',
-        healthStatus: 'healthy',
-      });
-      setModalVisible(false);
-      setNewTag('');
-      setNewName('');
-      loadData(); // Refresh list & metrics
-    } catch (err: any) {
-      Alert.alert('Error', err.message || 'Failed to add cattle');
-    } finally {
-      setAddingCattle(false);
-    }
-  };
 
   const getStatusBadge = (status: Cattle['status']) => {
     switch (status) {
@@ -146,7 +110,7 @@ export const DashboardScreen: React.FC = () => {
             <Text style={styles.sectionTitle}>Recent Cattle</Text>
             <TouchableOpacity
               style={styles.addBtn}
-              onPress={() => setModalVisible(true)}
+              onPress={onNavigateToAddCattle}
               activeOpacity={0.8}
             >
               <Text style={styles.addBtnText}>+ Add Cow</Text>
@@ -159,9 +123,23 @@ export const DashboardScreen: React.FC = () => {
             return (
               <View key={cow.id} style={styles.cattleCard}>
                 <View style={styles.cattleCardHeader}>
-                  <View>
-                    <Text style={styles.cattleName}>{cow.name}</Text>
-                    <Text style={styles.cattleTag}>Tag: {cow.tagNumber} • {cow.breed}</Text>
+                  <View style={styles.cattleInfo}>
+                    {cow.imageUri ? (
+                      <Image source={{ uri: cow.imageUri }} style={styles.cowThumb} />
+                    ) : (
+                      <View style={styles.cowThumbPlaceholder}>
+                        <Text style={styles.cowThumbText}>🐄</Text>
+                      </View>
+                    )}
+                    <View style={styles.cattleTextInfo}>
+                      <Text style={styles.cattleName}>{cow.name}</Text>
+                      <Text style={styles.cattleTag}>
+                        Tag: {cow.tagNumber} • {cow.breed}
+                      </Text>
+                      <Text style={styles.cattleAge}>
+                        Age: {cow.ageYears}y {cow.ageMonths}m • Calves: {cow.calvesDelivered}
+                      </Text>
+                    </View>
                   </View>
                   <View style={[styles.badge, { backgroundColor: badge.bg }]}>
                     <Text style={[styles.badgeText, { color: badge.color }]}>{badge.label}</Text>
@@ -181,69 +159,6 @@ export const DashboardScreen: React.FC = () => {
           })}
         </ScrollView>
       )}
-
-      {/* Modal to Register New Cattle */}
-      <Modal visible={modalVisible} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Register New Cattle</Text>
-
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Tag Number (e.g. BVX-106)"
-              placeholderTextColor="#999"
-              value={newTag}
-              onChangeText={setNewTag}
-            />
-
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Cow Name (e.g. Bella)"
-              placeholderTextColor="#999"
-              value={newName}
-              onChangeText={setNewName}
-            />
-
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Breed (e.g. Jersey)"
-              placeholderTextColor="#999"
-              value={newBreed}
-              onChangeText={setNewBreed}
-            />
-
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Est. Daily Milk Yield (Liters)"
-              placeholderTextColor="#999"
-              keyboardType="numeric"
-              value={newYield}
-              onChangeText={setNewYield}
-            />
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={styles.cancelBtn}
-                onPress={() => setModalVisible(false)}
-              >
-                <Text style={styles.cancelBtnText}>Cancel</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.submitBtn}
-                onPress={handleAddCattle}
-                disabled={addingCattle}
-              >
-                {addingCattle ? (
-                  <ActivityIndicator color="#FFF" />
-                ) : (
-                  <Text style={styles.submitBtnText}>Save Cattle</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 };
@@ -364,6 +279,33 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
   },
+  cattleInfo: {
+    flexDirection: 'row',
+    flex: 1,
+  },
+  cowThumb: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    marginRight: 10,
+  },
+  cowThumbPlaceholder: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: '#0F172A',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  cowThumbText: {
+    fontSize: 20,
+  },
+  cattleTextInfo: {
+    flex: 1,
+  },
   cattleName: {
     fontSize: 16,
     fontWeight: '700',
@@ -374,10 +316,16 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
     marginTop: 2,
   },
+  cattleAge: {
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 2,
+  },
   badge: {
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
+    marginLeft: 8,
   },
   badgeText: {
     fontSize: 11,
@@ -402,60 +350,5 @@ const styles = StyleSheet.create({
   healthText: {
     color: '#CBD5E1',
     fontSize: 12,
-  },
-
-  // Modal styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-  },
-  modalContent: {
-    backgroundColor: '#1E293B',
-    borderRadius: 16,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#F8FAFC',
-    marginBottom: 16,
-  },
-  modalInput: {
-    backgroundColor: '#0F172A',
-    borderColor: '#334155',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    color: '#FFFFFF',
-    marginBottom: 12,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 8,
-  },
-  cancelBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    marginRight: 8,
-  },
-  cancelBtnText: {
-    color: '#94A3B8',
-    fontWeight: '600',
-  },
-  submitBtn: {
-    backgroundColor: '#10B981',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  submitBtnText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
   },
 });

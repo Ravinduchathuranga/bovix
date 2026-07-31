@@ -5,13 +5,16 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from './src/presentation/context/AuthContext';
 import { LoginScreen } from './src/presentation/screens/LoginScreen';
 import { DashboardScreen } from './src/presentation/screens/DashboardScreen';
+import { AddCattleScreen } from './src/presentation/screens/AddCattleScreen';
 import { DailyMilkingScreen } from './src/presentation/screens/DailyMilkingScreen';
+import { ReconciliationScreen } from './src/presentation/screens/ReconciliationScreen';
 import { SettingsScreen } from './src/presentation/screens/SettingsScreen';
 import { BottomTabs, TabType } from './src/presentation/components/BottomTabs';
 
 const RootNavigation: React.FC = () => {
   const { user, isLoading } = useAuth();
   const [currentTab, setCurrentTab] = useState<TabType>('dashboard');
+  const [showAddCattle, setShowAddCattle] = useState(false);
 
   if (isLoading) {
     return (
@@ -25,16 +28,35 @@ const RootNavigation: React.FC = () => {
     return <LoginScreen />;
   }
 
+  // Show full-screen Add Cattle form (stacked over tabs)
+  if (showAddCattle) {
+    return (
+      <AddCattleScreen
+        onCattleAdded={() => {
+          setShowAddCattle(false);
+          setCurrentTab('dashboard');
+        }}
+        onCancel={() => setShowAddCattle(false)}
+      />
+    );
+  }
+
   const renderScreen = () => {
     switch (currentTab) {
       case 'dashboard':
-        return <DashboardScreen />;
+        return (
+          <DashboardScreen onNavigateToAddCattle={() => setShowAddCattle(true)} />
+        );
       case 'milking':
         return <DailyMilkingScreen />;
+      case 'reconciliation':
+        return <ReconciliationScreen />;
       case 'settings':
         return <SettingsScreen />;
       default:
-        return <DashboardScreen />;
+        return (
+          <DashboardScreen onNavigateToAddCattle={() => setShowAddCattle(true)} />
+        );
     }
   };
 
