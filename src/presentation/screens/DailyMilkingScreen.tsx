@@ -139,8 +139,19 @@ export const DailyMilkingScreen: React.FC = () => {
           <Text style={styles.sectionTitle}>Collection History</Text>
 
           {records.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>No bulk milk records found.</Text>
+            <View style={styles.emptyBanner}>
+              <Text style={styles.emptyBannerIcon}>🥛</Text>
+              <Text style={styles.emptyBannerTitle}>No Milk Collections Logged</Text>
+              <Text style={styles.emptyBannerSubtitle}>
+                Record your bulk tank milk yield in kilograms to monitor daily farm production.
+              </Text>
+              <TouchableOpacity
+                style={styles.bannerActionBtn}
+                onPress={() => setModalVisible(true)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.bannerActionBtnText}>+ Record New Milk Entry</Text>
+              </TouchableOpacity>
             </View>
           ) : (
             records.map((rec) => (
@@ -378,13 +389,43 @@ const styles = StyleSheet.create({
     color: '#F8FAFC',
     marginBottom: 12,
   },
-  emptyState: {
+  emptyBanner: {
+    backgroundColor: '#1E293B',
+    borderRadius: 16,
     padding: 24,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#334155',
+    borderStyle: 'dashed',
+    marginVertical: 12,
   },
-  emptyText: {
+  emptyBannerIcon: {
+    fontSize: 44,
+    marginBottom: 12,
+  },
+  emptyBannerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#F8FAFC',
+    marginBottom: 6,
+  },
+  emptyBannerSubtitle: {
+    fontSize: 13,
     color: '#94A3B8',
-    fontStyle: 'italic',
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: 18,
+  },
+  bannerActionBtn: {
+    backgroundColor: '#10B981',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 10,
+  },
+  bannerActionBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 14,
   },
   recordCard: {
     backgroundColor: '#1E293B',
