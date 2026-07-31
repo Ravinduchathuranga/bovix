@@ -117,46 +117,63 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigateToAd
             </TouchableOpacity>
           </View>
 
-          {/* Cattle List */}
-          {recentCattle.map((cow) => {
-            const badge = getStatusBadge(cow.status);
-            return (
-              <View key={cow.id} style={styles.cattleCard}>
-                <View style={styles.cattleCardHeader}>
-                  <View style={styles.cattleInfo}>
-                    {cow.imageUri ? (
-                      <Image source={{ uri: cow.imageUri }} style={styles.cowThumb} />
-                    ) : (
-                      <View style={styles.cowThumbPlaceholder}>
-                        <Text style={styles.cowThumbText}>🐄</Text>
+          {/* Empty State Banner or Cattle List */}
+          {recentCattle.length === 0 ? (
+            <View style={styles.emptyBanner}>
+              <Text style={styles.emptyBannerIcon}>🐄</Text>
+              <Text style={styles.emptyBannerTitle}>No Cattle Records Found</Text>
+              <Text style={styles.emptyBannerSubtitle}>
+                Get started by registering your first cow to track milk yield and health metrics.
+              </Text>
+              <TouchableOpacity
+                style={styles.bannerActionBtn}
+                onPress={onNavigateToAddCattle}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.bannerActionBtnText}>+ Add New Cattle</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            recentCattle.map((cow) => {
+              const badge = getStatusBadge(cow.status);
+              return (
+                <View key={cow.id} style={styles.cattleCard}>
+                  <View style={styles.cattleCardHeader}>
+                    <View style={styles.cattleInfo}>
+                      {cow.imageUri ? (
+                        <Image source={{ uri: cow.imageUri }} style={styles.cowThumb} />
+                      ) : (
+                        <View style={styles.cowThumbPlaceholder}>
+                          <Text style={styles.cowThumbText}>🐄</Text>
+                        </View>
+                      )}
+                      <View style={styles.cattleTextInfo}>
+                        <Text style={styles.cattleName}>{cow.name}</Text>
+                        <Text style={styles.cattleTag}>
+                          Tag: {cow.tagNumber} • {cow.breed}
+                        </Text>
+                        <Text style={styles.cattleAge}>
+                          Age: {cow.ageYears}y {cow.ageMonths}m • Calves: {cow.calvesDelivered}
+                        </Text>
                       </View>
-                    )}
-                    <View style={styles.cattleTextInfo}>
-                      <Text style={styles.cattleName}>{cow.name}</Text>
-                      <Text style={styles.cattleTag}>
-                        Tag: {cow.tagNumber} • {cow.breed}
-                      </Text>
-                      <Text style={styles.cattleAge}>
-                        Age: {cow.ageYears}y {cow.ageMonths}m • Calves: {cow.calvesDelivered}
-                      </Text>
+                    </View>
+                    <View style={[styles.badge, { backgroundColor: badge.bg }]}>
+                      <Text style={[styles.badgeText, { color: badge.color }]}>{badge.label}</Text>
                     </View>
                   </View>
-                  <View style={[styles.badge, { backgroundColor: badge.bg }]}>
-                    <Text style={[styles.badgeText, { color: badge.color }]}>{badge.label}</Text>
+
+                  <View style={styles.cattleCardFooter}>
+                    <Text style={styles.yieldText}>
+                      Yield: <Text style={styles.yieldVal}>{cow.dailyMilkYieldLiters} L/day</Text>
+                    </Text>
+                    <Text style={styles.healthText}>
+                      Status: {cow.healthStatus === 'healthy' ? '💚 Healthy' : '⚠️ Attention'}
+                    </Text>
                   </View>
                 </View>
-
-                <View style={styles.cattleCardFooter}>
-                  <Text style={styles.yieldText}>
-                    Yield: <Text style={styles.yieldVal}>{cow.dailyMilkYieldLiters} L/day</Text>
-                  </Text>
-                  <Text style={styles.healthText}>
-                    Status: {cow.healthStatus === 'healthy' ? '💚 Healthy' : '⚠️ Attention'}
-                  </Text>
-                </View>
-              </View>
-            );
-          })}
+              );
+            })
+          )}
         </ScrollView>
       )}
     </SafeAreaView>
@@ -265,6 +282,44 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontWeight: '700',
     fontSize: 13,
+  },
+  emptyBanner: {
+    backgroundColor: '#1E293B',
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#334155',
+    borderStyle: 'dashed',
+    marginVertical: 12,
+  },
+  emptyBannerIcon: {
+    fontSize: 44,
+    marginBottom: 12,
+  },
+  emptyBannerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#F8FAFC',
+    marginBottom: 6,
+  },
+  emptyBannerSubtitle: {
+    fontSize: 13,
+    color: '#94A3B8',
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: 18,
+  },
+  bannerActionBtn: {
+    backgroundColor: '#10B981',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 10,
+  },
+  bannerActionBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 14,
   },
   cattleCard: {
     backgroundColor: '#1E293B',
