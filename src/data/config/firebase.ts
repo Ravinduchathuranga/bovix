@@ -1,9 +1,14 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import {
+  // @ts-ignore - Expo/React Native bundler exports getReactNativePersistence
+  getReactNativePersistence,
   initializeAuth,
   getAuth,
   Auth,
 } from 'firebase/auth';
+import { getFirestore, Firestore } from 'firebase/firestore';
+// @ts-ignore - AsyncStorage module type resolution in IDE editor context
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Access environment variables securely from process.env (Expo loads .env / EXPO_PUBLIC_ variables)
 const firebaseConfig = {
@@ -21,12 +26,17 @@ const firebaseConfig = {
 // Initialize Firebase App
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// Initialize Firebase Auth
+// Initialize Firebase Auth with React Native persistence via AsyncStorage
 let auth: Auth;
 try {
-  auth = initializeAuth(app);
+  auth = initializeAuth(app, {
+    persistence: getReactNativePersistence(AsyncStorage),
+  });
 } catch (e) {
   auth = getAuth(app);
 }
 
-export { app, auth, firebaseConfig };
+// Initialize Firestore
+const db: Firestore = getFirestore(app);
+
+export { app, auth, db, firebaseConfig };
