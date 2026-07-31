@@ -164,97 +164,114 @@ export const ReconciliationScreen: React.FC = () => {
           {/* Comparison Cards list */}
           <Text style={styles.sectionTitle}>Daily Reconciliation Logs</Text>
 
-          {comparisons.map((item) => {
-            const hasReceipt = !!item.receipt;
+          {comparisons.length === 0 ? (
+            <View style={styles.emptyBanner}>
+              <Text style={styles.emptyBannerIcon}>⚖️</Text>
+              <Text style={styles.emptyBannerTitle}>No Receipts Logged</Text>
+              <Text style={styles.emptyBannerSubtitle}>
+                Add company paper slips to compare farm tank weight against official factory receipts.
+              </Text>
+              <TouchableOpacity
+                style={styles.bannerActionBtn}
+                onPress={() => setModalVisible(true)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.bannerActionBtnText}>+ Log Company Paper Slip</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            comparisons.map((item) => {
+              const hasReceipt = !!item.receipt;
 
-            return (
-              <View key={item.date} style={styles.card}>
-                <View style={styles.cardHeader}>
-                  <View>
-                    <Text style={styles.cardDate}>{item.date}</Text>
-                    {hasReceipt ? (
-                      <Text style={styles.receiptNo}>
-                        Slip #{item.receipt?.receiptNumber} • {item.receipt?.companyName}
-                      </Text>
-                    ) : (
-                      <Text style={styles.noReceiptText}>⚠️ Awaiting Company Receipt Slip</Text>
+              return (
+                <View key={item.date} style={styles.card}>
+                  <View style={styles.cardHeader}>
+                    <View>
+                      <Text style={styles.cardDate}>{item.date}</Text>
+                      {hasReceipt ? (
+                        <Text style={styles.receiptNo}>
+                          Slip #{item.receipt?.receiptNumber} • {item.receipt?.companyName}
+                        </Text>
+                      ) : (
+                        <Text style={styles.noReceiptText}>⚠️ Awaiting Company Receipt Slip</Text>
+                      )}
+                    </View>
+
+                    {hasReceipt && (
+                      <TouchableOpacity
+                        onPress={() =>
+                          handleDeleteReceipt(item.receipt!.id, item.receipt!.receiptNumber)
+                        }
+                        style={styles.deleteBtn}
+                      >
+                        <Text style={styles.deleteBtnText}>✕</Text>
+                      </TouchableOpacity>
                     )}
                   </View>
 
+                  {/* Comparison Columns */}
+                  <View style={styles.comparisonRow}>
+                    <View style={styles.col}>
+                      <Text style={styles.colLabel}>Farm Logged</Text>
+                      <Text style={styles.colVal}>{item.farmLoggedKg} KG</Text>
+                    </View>
+
+                    <View style={styles.vsBox}>
+                      <Text style={styles.vsText}>VS</Text>
+                    </View>
+
+                    <View style={styles.col}>
+                      <Text style={styles.colLabel}>Company Weight</Text>
+                      <Text style={styles.colVal}>
+                        {hasReceipt ? `${item.companyReceiptKg} KG` : 'Pending'}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Variance Status Banner */}
                   {hasReceipt && (
-                    <TouchableOpacity
-                      onPress={() =>
-                        handleDeleteReceipt(item.receipt!.id, item.receipt!.receiptNumber)
-                      }
-                      style={styles.deleteBtn}
-                    >
-                      <Text style={styles.deleteBtnText}>✕</Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-
-                {/* Comparison Columns */}
-                <View style={styles.comparisonRow}>
-                  <View style={styles.col}>
-                    <Text style={styles.colLabel}>Farm Logged</Text>
-                    <Text style={styles.colVal}>{item.farmLoggedKg} KG</Text>
-                  </View>
-
-                  <View style={styles.vsBox}>
-                    <Text style={styles.vsText}>VS</Text>
-                  </View>
-
-                  <View style={styles.col}>
-                    <Text style={styles.colLabel}>Company Weight</Text>
-                    <Text style={styles.colVal}>
-                      {hasReceipt ? `${item.companyReceiptKg} KG` : 'Pending'}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Variance Status Banner */}
-                {hasReceipt && (
-                  <View
-                    style={[
-                      styles.statusBanner,
-                      item.status === 'match'
-                        ? styles.bgMatch
-                        : item.status === 'minor_discrepancy'
-                        ? styles.bgWarn
-                        : styles.bgAlert,
-                    ]}
-                  >
-                    <Text
+                    <View
                       style={[
-                        styles.statusText,
+                        styles.statusBanner,
                         item.status === 'match'
-                          ? styles.textMatch
+                          ? styles.bgMatch
                           : item.status === 'minor_discrepancy'
-                          ? styles.textWarn
-                          : styles.textAlert,
+                          ? styles.bgWarn
+                          : styles.bgAlert,
                       ]}
                     >
-                      {item.status === 'match'
-                        ? `✅ Exact Match / Low Variance (${item.differenceKg > 0 ? '+' : ''}${
-                            item.differenceKg
-                          } KG, ${item.variancePercentage}%)`
-                        : item.status === 'minor_discrepancy'
-                        ? `⚠️ Minor Scale Diff: ${item.differenceKg > 0 ? '+' : ''}${
-                            item.differenceKg
-                          } KG (${item.variancePercentage}%)`
-                        : `🚨 Discrepancy Alert: ${item.differenceKg} KG difference! (${item.variancePercentage}%)`}
-                    </Text>
-
-                    {item.receipt?.totalPayout ? (
-                      <Text style={styles.payoutText}>
-                        Est. Payout: ${item.receipt.totalPayout.toFixed(2)}
+                      <Text
+                        style={[
+                          styles.statusText,
+                          item.status === 'match'
+                            ? styles.textMatch
+                            : item.status === 'minor_discrepancy'
+                            ? styles.textWarn
+                            : styles.textAlert,
+                        ]}
+                      >
+                        {item.status === 'match'
+                          ? `✅ Exact Match / Low Variance (${item.differenceKg > 0 ? '+' : ''}${
+                              item.differenceKg
+                            } KG, ${item.variancePercentage}%)`
+                          : item.status === 'minor_discrepancy'
+                          ? `⚠️ Minor Scale Diff: ${item.differenceKg > 0 ? '+' : ''}${
+                              item.differenceKg
+                            } KG (${item.variancePercentage}%)`
+                          : `🚨 Discrepancy Alert: ${item.differenceKg} KG difference! (${item.variancePercentage}%)`}
                       </Text>
-                    ) : null}
-                  </View>
-                )}
-              </View>
-            );
-          })}
+
+                      {item.receipt?.totalPayout ? (
+                        <Text style={styles.payoutText}>
+                          Est. Payout: ${item.receipt.totalPayout.toFixed(2)}
+                        </Text>
+                      ) : null}
+                    </View>
+                  )}
+                </View>
+              );
+            })
+          )}
         </ScrollView>
       )}
 
@@ -439,6 +456,44 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#F8FAFC',
     marginBottom: 12,
+  },
+  emptyBanner: {
+    backgroundColor: '#1E293B',
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#334155',
+    borderStyle: 'dashed',
+    marginVertical: 12,
+  },
+  emptyBannerIcon: {
+    fontSize: 44,
+    marginBottom: 12,
+  },
+  emptyBannerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#F8FAFC',
+    marginBottom: 6,
+  },
+  emptyBannerSubtitle: {
+    fontSize: 13,
+    color: '#94A3B8',
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: 18,
+  },
+  bannerActionBtn: {
+    backgroundColor: '#10B981',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 10,
+  },
+  bannerActionBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 14,
   },
   card: {
     backgroundColor: '#1E293B',
