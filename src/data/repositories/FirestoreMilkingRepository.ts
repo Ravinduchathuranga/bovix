@@ -39,9 +39,13 @@ export class FirestoreMilkingRepository implements MilkingRepository {
       createdAt: new Date().toISOString(),
     };
     try {
-      await setDoc(doc(db, this.collectionName, id), newRecord);
+      const docData = Object.fromEntries(
+        Object.entries(newRecord).filter(([_, v]) => v !== undefined)
+      );
+      await setDoc(doc(db, this.collectionName, id), docData);
     } catch (err) {
-      console.warn('Firestore record bulk milk error:', err);
+      console.error('Firestore record bulk milk error:', err);
+      throw err;
     }
     return newRecord;
   }
@@ -50,7 +54,8 @@ export class FirestoreMilkingRepository implements MilkingRepository {
     try {
       await deleteDoc(doc(db, this.collectionName, id));
     } catch (err) {
-      console.warn('Firestore delete milk record error:', err);
+      console.error('Firestore delete milk record error:', err);
+      throw err;
     }
   }
 }
