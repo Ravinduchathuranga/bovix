@@ -39,9 +39,13 @@ export class FirestoreReceiptRepository implements ReceiptRepository {
       createdAt: new Date().toISOString(),
     };
     try {
-      await setDoc(doc(db, this.collectionName, id), newReceipt);
+      const docData = Object.fromEntries(
+        Object.entries(newReceipt).filter(([_, v]) => v !== undefined)
+      );
+      await setDoc(doc(db, this.collectionName, id), docData);
     } catch (err) {
-      console.warn('Firestore add receipt error:', err);
+      console.error('Firestore add receipt error:', err);
+      throw err;
     }
     return newReceipt;
   }
@@ -50,7 +54,8 @@ export class FirestoreReceiptRepository implements ReceiptRepository {
     try {
       await deleteDoc(doc(db, this.collectionName, id));
     } catch (err) {
-      console.warn('Firestore delete receipt error:', err);
+      console.error('Firestore delete receipt error:', err);
+      throw err;
     }
   }
 
