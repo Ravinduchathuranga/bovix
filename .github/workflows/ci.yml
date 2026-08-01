@@ -2,9 +2,9 @@ name: Bovix CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, master, develop ]
+    branches: [main, master, develop]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
 
 jobs:
   lint-and-test:
@@ -19,7 +19,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: "npm"
 
       - name: Install Project Dependencies
         run: npm ci
@@ -29,3 +29,13 @@ jobs:
 
       - name: Run Jest Test Suite
         run: npm test -- --passWithNoTests
+
+      - name: Setup EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Publish OTA Update to Expo
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        run: npx eas update --auto --non-interactive
