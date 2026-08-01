@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
@@ -20,11 +21,31 @@ interface AddCattleScreenProps {
   onCancel: () => void;
 }
 
+const BREED_CATEGORIES = [
+  {
+    category: 'Exotic Breeds',
+    icon: '✨',
+    breeds: ['Holstein-Friesian', 'Jersey', 'Ayrshire'],
+  },
+  {
+    category: 'Tropical Breeds',
+    icon: '🌴',
+    breeds: ['Sahiwal', 'Red Sindhi', 'Tharparkar'],
+  },
+  {
+    category: 'Other Breeds',
+    icon: '🐮',
+    breeds: ['Crossbreed', 'Other'],
+  },
+];
+
 export const AddCattleScreen: React.FC<AddCattleScreenProps> = ({ onCattleAdded, onCancel }) => {
   // Basic Info
   const [tagNumber, setTagNumber] = useState('');
   const [name, setName] = useState('');
-  const [breed, setBreed] = useState('Holstein Friesian');
+  const [breed, setBreed] = useState('Holstein-Friesian');
+  const [customBreed, setCustomBreed] = useState('');
+  const [showBreedModal, setShowBreedModal] = useState(false);
   const [gender, setGender] = useState<'female' | 'male'>('female');
 
   // Age
@@ -36,17 +57,21 @@ export const AddCattleScreen: React.FC<AddCattleScreenProps> = ({ onCattleAdded,
   const [dailyYield, setDailyYield] = useState('');
   const [healthStatus, setHealthStatus] = useState<Cattle['healthStatus']>('healthy');
 
-  // New Fields
-  const [imageUri, setImageUri] = useState<string | undefined>(undefined);
+  // Photos (Up to 3 Images)
+  const [photos, setPhotos] = useState<(string | undefined)[]>([
+    undefined,
+    undefined,
+    undefined,
+  ]);
   const [medicalHistory, setMedicalHistory] = useState('');
   const [calvesDelivered, setCalvesDelivered] = useState('0');
 
   const [saving, setSaving] = useState(false);
 
-  const pickImage = async () => {
+  const pickImageForSlot = async (slotIndex: number) => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permissionResult.granted) {
-      Alert.alert('Permission Denied', 'Camera roll access is required to pick a cow photo.');
+      Alert.alert('Permission Denied', 'Camera roll access is required to pick a photo.');
       return;
     }
 
@@ -58,14 +83,19 @@ export const AddCattleScreen: React.FC<AddCattleScreenProps> = ({ onCattleAdded,
     });
 
     if (!result.canceled && result.assets.length > 0) {
-      setImageUri(result.assets[0].uri);
+      const uri = result.assets[0].uri;
+      setPhotos((prev) => {
+        const copy = [...prev];
+        copy[slotIndex] = uri;
+        return copy;
+      });
     }
   };
 
-  const takePhoto = async () => {
+  const takePhotoForSlot = async (slotIndex: number) => {
     const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
     if (!permissionResult.granted) {
-      Alert.alert('Permission Denied', 'Camera access is required to take a cow photo.');
+      Alert.alert('Permission Denied', 'Camera access is required to take a photo.');
       return;
     }
 
@@ -76,16 +106,37 @@ export const AddCattleScreen: React.FC<AddCattleScreenProps> = ({ onCattleAdded,
     });
 
     if (!result.canceled && result.assets.length > 0) {
-      setImageUri(result.assets[0].uri);
+      const uri = result.assets[0].uri;
+      setPhotos((prev) => {
+        const copy = [...prev];
+        copy[slotIndex] = uri;
+        return copy;
+      });
     }
   };
 
-  const showImageOptions = () => {
-    Alert.alert('Add Cow Photo', 'How would you like to add a photo?', [
-      { text: 'Camera', onPress: takePhoto },
-      { text: 'Gallery', onPress: pickImage },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
+  const showImageOptionsForSlot = (slotIndex: number) => {
+    const slotLabels = ['Photo 1 (Front View)', 'Photo 2 (Side Profile)', 'Photo 3 (Tag / Health)'];
+    Alert.alert(
+      `Set ${slotLabels[slotIndex]}`,
+      'Choose source for this photo slot:',
+      [
+        { text: 'Camera', onPress: () => takePhotoForSlot(slotIndex) },
+        { text: 'Gallery', onPress: () => pickImageForSlot(slotIndex) },
+        photos[slotIndex]
+          ? {
+              text: 'Remove Photo',
+              style: 'destructive',
+              onPress: () =>
+                setPhotos((prev) => {
+                  const copy = [...prev];
+                  copy[slotIndex] = undefined;
+                  return copy;
+                }),
+            }
+          : { text: 'Cancel', style: 'cancel' },
+      ]
+    );
   };
 
   const handleSave = async () => {
@@ -100,17 +151,21 @@ export const AddCattleScreen: React.FC<AddCattleScreenProps> = ({ onCattleAdded,
 
     setSaving(true);
     try {
+      const finalBreed = breed === 'Other' ? (customBreed.trim() || 'Other') : breed;
+      const validImages = photos.filter((p): p is string => Boolean(p));
+
       await addCattleUseCase.execute({
         tagNumber: tagNumber.trim(),
         name: name.trim(),
-        breed: breed.trim() || 'Unknown',
+        breed: finalBreed,
         ageYears: parseInt(ageYears) || 0,
         ageMonths: parseInt(ageMonths) || 0,
         gender,
         status,
         dailyMilkYieldLiters: parseFloat(dailyYield) || 0,
         healthStatus,
-        imageUri,
+        imageUri: validImages[0] || undefined,
+        images: validImages.length > 0 ? validImages : undefined,
         medicalHistory: medicalHistory.trim(),
         calvesDelivered: parseInt(calvesDelivered) || 0,
       });
@@ -145,25 +200,48 @@ export const AddCattleScreen: React.FC<AddCattleScreenProps> = ({ onCattleAdded,
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Cow Photo Section */}
+        {/* Cow Photos (3 Slots) */}
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionHeader}>Cow Identification Photo</Text>
-          <TouchableOpacity style={styles.imagePickerArea} onPress={showImageOptions}>
-            {imageUri ? (
-              <Image source={{ uri: imageUri }} style={styles.cowImage} />
-            ) : (
-              <View style={styles.imagePlaceholder}>
-                <Text style={styles.imagePlaceholderIcon}>📷</Text>
-                <Text style={styles.imagePlaceholderText}>Tap to add cow photo</Text>
-                <Text style={styles.imagePlaceholderHint}>Camera or Gallery</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-          {imageUri && (
-            <TouchableOpacity style={styles.changePhotoBtn} onPress={showImageOptions}>
-              <Text style={styles.changePhotoText}>Change Photo</Text>
-            </TouchableOpacity>
-          )}
+          <Text style={styles.sectionHeader}>Cow Photos (3 Photo Slots)</Text>
+          <Text style={styles.photoSectionSubtext}>
+            Upload up to 3 photos to display in the profile image slider.
+          </Text>
+
+          <View style={styles.slotsRow}>
+            {[
+              { title: 'Photo 1', sub: 'Front View', badge: 'Main' },
+              { title: 'Photo 2', sub: 'Side Profile', badge: 'Side' },
+              { title: 'Photo 3', sub: 'Ear Tag / Health', badge: 'Tag' },
+            ].map((slot, idx) => {
+              const uri = photos[idx];
+              return (
+                <TouchableOpacity
+                  key={idx}
+                  style={[styles.slotCard, uri ? styles.slotCardFilled : null]}
+                  onPress={() => showImageOptionsForSlot(idx)}
+                  activeOpacity={0.8}
+                >
+                  {uri ? (
+                    <View style={styles.slotImageContainer}>
+                      <Image source={{ uri }} style={styles.slotImage} />
+                      <View style={styles.slotBadge}>
+                        <Text style={styles.slotBadgeText}>{slot.badge}</Text>
+                      </View>
+                    </View>
+                  ) : (
+                    <View style={styles.slotEmpty}>
+                      <Text style={styles.slotCameraIcon}>📷</Text>
+                      <Text style={styles.slotTitle}>{slot.title}</Text>
+                      <Text style={styles.slotSub}>{slot.sub}</Text>
+                      <View style={styles.slotAddTag}>
+                        <Text style={styles.slotAddTagText}>+ Add</Text>
+                      </View>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         </View>
 
         {/* Basic Info */}
@@ -193,14 +271,17 @@ export const AddCattleScreen: React.FC<AddCattleScreenProps> = ({ onCattleAdded,
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Breed</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g. Holstein Friesian"
-              placeholderTextColor="#666"
-              value={breed}
-              onChangeText={setBreed}
-            />
+            <Text style={styles.inputLabel}>Breed *</Text>
+            <TouchableOpacity
+              style={styles.dropdownBtn}
+              onPress={() => setShowBreedModal(true)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.dropdownBtnText}>
+                {breed === 'Other' && customBreed ? `${customBreed} (Custom)` : breed}
+              </Text>
+              <Text style={styles.dropdownChevron}>▼</Text>
+            </TouchableOpacity>
           </View>
 
           <View style={styles.inputGroup}>
@@ -364,6 +445,86 @@ export const AddCattleScreen: React.FC<AddCattleScreenProps> = ({ onCattleAdded,
 
         <View style={{ height: 32 }} />
       </ScrollView>
+
+      {/* Breed Selection Modal */}
+      <Modal
+        visible={showBreedModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowBreedModal(false)}
+      >
+        <View style={styles.breedModalOverlay}>
+          <View style={styles.breedModalContent}>
+            <View style={styles.breedModalHeader}>
+              <Text style={styles.breedModalTitle}>Select Cattle Breed</Text>
+              <TouchableOpacity onPress={() => setShowBreedModal(false)}>
+                <Text style={styles.breedModalCloseText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false}>
+              {BREED_CATEGORIES.map((group) => (
+                <View key={group.category} style={styles.breedGroup}>
+                  <Text style={styles.breedGroupTitle}>
+                    {group.icon} {group.category}
+                  </Text>
+                  {group.breeds.map((b) => {
+                    const isSelected = breed === b;
+                    return (
+                      <TouchableOpacity
+                        key={b}
+                        style={[
+                          styles.breedOption,
+                          isSelected && styles.breedOptionSelected,
+                        ]}
+                        onPress={() => {
+                          setBreed(b);
+                          if (b !== 'Other') {
+                            setShowBreedModal(false);
+                          }
+                        }}
+                        activeOpacity={0.7}
+                      >
+                        <Text
+                          style={[
+                            styles.breedOptionText,
+                            isSelected && styles.breedOptionTextSelected,
+                          ]}
+                        >
+                          {b}
+                        </Text>
+                        {isSelected && <Text style={styles.checkIcon}>✓</Text>}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              ))}
+
+              {breed === 'Other' && (
+                <View style={styles.customBreedInputContainer}>
+                  <Text style={styles.inputLabel}>Specify Custom Breed Name</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="e.g. Gir / Brown Swiss"
+                    placeholderTextColor="#666"
+                    value={customBreed}
+                    onChangeText={setCustomBreed}
+                    autoFocus
+                  />
+                </View>
+              )}
+            </ScrollView>
+
+            <TouchableOpacity
+              style={styles.doneBreedBtn}
+              onPress={() => setShowBreedModal(false)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.doneBreedBtnText}>Done / Select</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -577,5 +738,204 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '800',
     fontSize: 16,
+  },
+
+  // Breed Dropdown & Modal
+  dropdownBtn: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#0F172A',
+    borderColor: '#334155',
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  dropdownBtnText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  dropdownChevron: {
+    color: '#10B981',
+    fontSize: 12,
+  },
+  breedModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    justifyContent: 'center',
+    paddingHorizontal: 18,
+  },
+  breedModalContent: {
+    backgroundColor: '#1E293B',
+    borderRadius: 18,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#334155',
+    maxHeight: '85%',
+  },
+  breedModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#334155',
+  },
+  breedModalTitle: {
+    color: '#F8FAFC',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  breedModalCloseText: {
+    color: '#94A3B8',
+    fontSize: 18,
+    fontWeight: '700',
+    padding: 4,
+  },
+  breedGroup: {
+    marginBottom: 16,
+  },
+  breedGroupTitle: {
+    color: '#10B981',
+    fontSize: 13,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  breedOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#0F172A',
+    borderColor: '#334155',
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 8,
+  },
+  breedOptionSelected: {
+    backgroundColor: '#064E3B',
+    borderColor: '#10B981',
+  },
+  breedOptionText: {
+    color: '#CBD5E1',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  breedOptionTextSelected: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  checkIcon: {
+    color: '#34D399',
+    fontWeight: '800',
+    fontSize: 16,
+  },
+  customBreedInputContainer: {
+    marginTop: 8,
+    marginBottom: 12,
+  },
+  doneBreedBtn: {
+    backgroundColor: '#10B981',
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  doneBreedBtnText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+
+  // 3 Photo Slots styles
+  photoSectionSubtext: {
+    color: '#94A3B8',
+    fontSize: 12,
+    marginTop: -6,
+    marginBottom: 12,
+  },
+  slotsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  slotCard: {
+    flex: 1,
+    height: 120,
+    backgroundColor: '#0F172A',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#334155',
+    borderStyle: 'dashed',
+    overflow: 'hidden',
+  },
+  slotCardFilled: {
+    borderStyle: 'solid',
+    borderColor: '#10B981',
+  },
+  slotImageContainer: {
+    width: '100%',
+    height: '100%',
+    position: 'relative',
+  },
+  slotImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  slotBadge: {
+    position: 'absolute',
+    bottom: 6,
+    left: 6,
+    backgroundColor: 'rgba(15, 23, 42, 0.85)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#10B981',
+  },
+  slotBadgeText: {
+    color: '#34D399',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  slotEmpty: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 6,
+  },
+  slotCameraIcon: {
+    fontSize: 20,
+    marginBottom: 2,
+  },
+  slotTitle: {
+    color: '#F8FAFC',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  slotSub: {
+    color: '#64748B',
+    fontSize: 9,
+    textAlign: 'center',
+    marginTop: 1,
+  },
+  slotAddTag: {
+    marginTop: 4,
+    backgroundColor: '#1E293B',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  slotAddTagText: {
+    color: '#10B981',
+    fontSize: 10,
+    fontWeight: '700',
   },
 });
