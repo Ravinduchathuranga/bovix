@@ -17,6 +17,7 @@ import {
   deleteMilkRecordUseCase,
 } from '../../di/container';
 import { BulkMilkRecord } from '../../domain/entities/cattle';
+import { AppDatePicker, formatDateFriendly } from '../components/AppDatePicker';
 
 export const DailyMilkingScreen: React.FC = () => {
   const todayStr = new Date().toISOString().split('T')[0];
@@ -24,12 +25,15 @@ export const DailyMilkingScreen: React.FC = () => {
   const [records, setRecords] = useState<BulkMilkRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Date filter state
+  const [selectedFilterDate, setSelectedFilterDate] = useState<string>('');
+
   // Form / Modal State
   const [modalVisible, setModalVisible] = useState(false);
   const [recordDate, setRecordDate] = useState(todayStr);
   const [session, setSession] = useState<'Morning' | 'Evening'>('Morning');
   const [amountKg, setAmountKg] = useState('');
-  const [fatPercentage, setFatPercentage] = useState('4.2');
+  const [fatPercentage, setFatPercentage] = useState('');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -60,7 +64,7 @@ export const DailyMilkingScreen: React.FC = () => {
       const kg = parseFloat(amountKg);
       const fat = fatPercentage ? parseFloat(fatPercentage) : undefined;
       await recordBulkMilkUseCase.execute(recordDate, session, kg, fat, notes);
-      
+
       setModalVisible(false);
       setAmountKg('');
       setNotes('');
@@ -91,10 +95,16 @@ export const DailyMilkingScreen: React.FC = () => {
     );
   };
 
+  // Filtered records logic
+  const displayedRecords = selectedFilterDate
+    ? records.filter((r) => r.date === selectedFilterDate)
+    : records;
+
   // Metrics calculations
   const todayRecords = records.filter((r) => r.date === todayStr);
   const todayTotalKg = todayRecords.reduce((acc, r) => acc + r.amountKg, 0);
   const allTimeTotalKg = records.reduce((acc, r) => acc + r.amountKg, 0);
+  const filteredTotalKg = displayedRecords.reduce((acc, r) => acc + r.amountKg, 0);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -106,7 +116,10 @@ export const DailyMilkingScreen: React.FC = () => {
         </View>
         <TouchableOpacity
           style={styles.addBtn}
-          onPress={() => setModalVisible(true)}
+          onPress={() => {
+            setRecordDate(todayStr);
+            setModalVisible(true);
+          }}
           activeOpacity={0.8}
         >
           <Text style={styles.addBtnText}>+ Log Milk (KG)</Text>
@@ -130,31 +143,66 @@ export const DailyMilkingScreen: React.FC = () => {
 
             <View style={styles.summaryCard}>
               <Text style={styles.summaryIcon}>📈</Text>
-              <Text style={styles.summaryVal}>{allTimeTotalKg.toFixed(1)} KG</Text>
-              <Text style={styles.summaryLbl}>All-Time Logged</Text>
+              <Text style={styles.summaryVal}>
+                {selectedFilterDate ? `${filteredTotalKg.toFixed(1)} KG` : `${allTimeTotalKg.toFixed(1)} KG`}
+              </Text>
+              <Text style={styles.summaryLbl}>
+                {selectedFilterDate ? 'Filtered Yield' : 'All-Time Logged'}
+              </Text>
             </View>
           </View>
 
-          {/* Collection Log List */}
-          <Text style={styles.sectionTitle}>Collection History</Text>
+          {/* Collection Log List & Date Filter */}
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitle}>Collection History</Text>
+            {selectedFilterDate ? (
+              <TouchableOpacity
+                onPress={() => setSelectedFilterDate('')}
+                style={styles.clearFilterBtn}
+              >
+                <Text style={styles.clearFilterText}>Show All Dates ✕</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
 
-          {records.length === 0 ? (
+          {/* Date Picker Filter Bar */}
+          <View style={styles.filterCard}>
+            <AppDatePicker
+              label="Filter Logs by Specific Date:"
+              value={selectedFilterDate}
+              onChange={setSelectedFilterDate}
+              placeholder="Showing all recorded dates (Tap to select date)"
+              showPresets={true}
+              allowClear={true}
+            />
+          </View>
+
+          {displayedRecords.length === 0 ? (
             <View style={styles.emptyBanner}>
               <Text style={styles.emptyBannerIcon}>🥛</Text>
-              <Text style={styles.emptyBannerTitle}>No Milk Collections Logged</Text>
+              <Text style={styles.emptyBannerTitle}>
+                {selectedFilterDate ? `No Logs for ${formatDateFriendly(selectedFilterDate)}` : 'No Milk Collections Logged'}
+              </Text>
               <Text style={styles.emptyBannerSubtitle}>
-                Record your bulk tank milk yield in kilograms to monitor daily farm production.
+                {selectedFilterDate
+                  ? 'No collection logs match the selected date. Select another date or add a new entry.'
+                  : 'Record your bulk tank milk yield in kilograms to monitor daily farm production.'}
               </Text>
               <TouchableOpacity
                 style={styles.bannerActionBtn}
-                onPress={() => setModalVisible(true)}
+                onPress={() => {
+                  if (selectedFilterDate) setRecordDate(selectedFilterDate);
+                  setModalVisible(true);
+                }}
                 activeOpacity={0.8}
               >
-                <Text style={styles.bannerActionBtnText}>+ Record New Milk Entry</Text>
+                <Text style={styles.bannerActionBtnText}>
+                  + Record Milk for {selectedFilterDate ? formatDateFriendly(selectedFilterDate) : 'Today'}
+                </Text>
               </TouchableOpacity>
             </View>
           ) : (
-            records.map((rec) => (
+            displayedRecords.map((rec) => (
               <View key={rec.id} style={styles.recordCard}>
                 <View style={styles.recordHeader}>
                   <View>
@@ -198,16 +246,12 @@ export const DailyMilkingScreen: React.FC = () => {
             <Text style={styles.modalTitle}>Log Bulk Milk Collection</Text>
             <Text style={styles.modalSubtitle}>Save collected milk in Kilograms (KG)</Text>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Date (YYYY-MM-DD)</Text>
-              <TextInput
-                style={styles.modalInput}
-                placeholder="2026-07-31"
-                placeholderTextColor="#999"
-                value={recordDate}
-                onChangeText={setRecordDate}
-              />
-            </View>
+            <AppDatePicker
+              label="Collection Date *"
+              value={recordDate}
+              onChange={setRecordDate}
+              showPresets={true}
+            />
 
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Collection Session</Text>
@@ -383,11 +427,35 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
     marginTop: 2,
   },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: '#F8FAFC',
-    marginBottom: 12,
+  },
+  clearFilterBtn: {
+    backgroundColor: '#334155',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  clearFilterText: {
+    color: '#F87171',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  filterCard: {
+    backgroundColor: '#1E293B',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#334155',
   },
   emptyBanner: {
     backgroundColor: '#1E293B',
