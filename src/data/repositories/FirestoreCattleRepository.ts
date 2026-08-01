@@ -45,9 +45,13 @@ export class FirestoreCattleRepository implements CattleRepository {
     const id = `cow_${Date.now()}`;
     const newCattle: Cattle = { ...cattleData, id };
     try {
-      await setDoc(doc(db, this.collectionName, id), newCattle);
+      const docData = Object.fromEntries(
+        Object.entries(newCattle).filter(([_, v]) => v !== undefined)
+      );
+      await setDoc(doc(db, this.collectionName, id), docData);
     } catch (err) {
-      console.warn('Firestore write error:', err);
+      console.error('Firestore write error:', err);
+      throw err;
     }
     return newCattle;
   }
@@ -55,9 +59,13 @@ export class FirestoreCattleRepository implements CattleRepository {
   async updateCattle(cattle: Cattle): Promise<Cattle> {
     try {
       const docRef = doc(db, this.collectionName, cattle.id);
-      await updateDoc(docRef, { ...cattle });
+      const docData = Object.fromEntries(
+        Object.entries(cattle).filter(([_, v]) => v !== undefined)
+      );
+      await updateDoc(docRef, docData);
     } catch (err) {
-      console.warn('Firestore update error:', err);
+      console.error('Firestore update error:', err);
+      throw err;
     }
     return cattle;
   }
