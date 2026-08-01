@@ -1,11 +1,18 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '../../domain/entities/cattle';
-import { authRepository, loginUseCase } from '../../di/container';
+import {
+  authRepository,
+  loginUseCase,
+  googleLoginUseCase,
+  signUpUseCase,
+} from '../../di/container';
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (email: string, pass: string) => Promise<void>;
+  signUp: (email: string, pass: string, name?: string) => Promise<void>;
+  loginWithGoogle: (idToken: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -32,6 +39,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const signUp = async (email: string, pass: string, name?: string) => {
+    setIsLoading(true);
+    try {
+      const newUser = await signUpUseCase.execute(email, pass, name);
+      setUser(newUser);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loginWithGoogle = async (idToken: string) => {
+    setIsLoading(true);
+    try {
+      const googleUser = await googleLoginUseCase.execute(idToken);
+      setUser(googleUser);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = async () => {
     setIsLoading(true);
     try {
@@ -43,7 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, signUp, loginWithGoogle, logout }}>
       {children}
     </AuthContext.Provider>
   );

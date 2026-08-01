@@ -1,8 +1,9 @@
-import { MockAuthRepository } from '../data/repositories/MockAuthRepository';
-import { MockCattleRepository } from '../data/repositories/MockCattleRepository';
-import { MockMilkingRepository } from '../data/repositories/MockMilkingRepository';
-import { MockReceiptRepository } from '../data/repositories/MockReceiptRepository';
+import { FirebaseAuthRepository } from '../data/repositories/FirebaseAuthRepository';
+import { FirestoreCattleRepository } from '../data/repositories/FirestoreCattleRepository';
+import { FirestoreMilkingRepository } from '../data/repositories/FirestoreMilkingRepository';
+import { FirestoreReceiptRepository } from '../data/repositories/FirestoreReceiptRepository';
 import { LoginUseCase } from '../domain/usecases/LoginUseCase';
+import { GoogleLoginUseCase, SignUpUseCase } from '../domain/usecases/AuthUseCases';
 import { GetDashboardDataUseCase } from '../domain/usecases/GetDashboardDataUseCase';
 import { AddCattleUseCase } from '../domain/usecases/AddCattleUseCase';
 import {
@@ -16,13 +17,16 @@ import {
   DeleteReceiptUseCase,
 } from '../domain/usecases/ReceiptUseCases';
 
-// Singletons / Dependencies
-const authRepository = new MockAuthRepository();
-const cattleRepository = new MockCattleRepository();
-const milkingRepository = new MockMilkingRepository();
-const receiptRepository = new MockReceiptRepository(milkingRepository);
+// Singletons / Repositories
+const authRepository = new FirebaseAuthRepository();
+const cattleRepository = new FirestoreCattleRepository();
+const milkingRepository = new FirestoreMilkingRepository();
+const receiptRepository = new FirestoreReceiptRepository(milkingRepository);
 
 export const loginUseCase = new LoginUseCase(authRepository);
+export const googleLoginUseCase = new GoogleLoginUseCase(authRepository);
+export const signUpUseCase = new SignUpUseCase(authRepository);
+
 export const getDashboardDataUseCase = new GetDashboardDataUseCase(cattleRepository);
 export const addCattleUseCase = new AddCattleUseCase(cattleRepository);
 
