@@ -5,11 +5,12 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
-    },
-    "preview": {
       "distribution": "internal",
-      "channel": "preview",
+      "channel": "development"
+    },
+    "main": {
+      "distribution": "internal",
+      "channel": "main",
       "env": {
         "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyDXCIOM0j2zyRupcE35Ik4gybsECr9lqWw",
         "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "bovix-test.firebaseapp.com",
