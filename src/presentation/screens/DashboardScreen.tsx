@@ -12,16 +12,18 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { getDashboardDataUseCase } from '../../di/container';
 import { Cattle, DashboardMetrics } from '../../domain/entities/cattle';
+import { CattleDetailsModal } from '../components/CattleDetailsModal';
 
 interface DashboardScreenProps {
   onNavigateToAddCattle?: () => void;
 }
 
 export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigateToAddCattle }) => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [recentCattle, setRecentCattle] = useState<Cattle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCow, setSelectedCow] = useState<Cattle | null>(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -63,9 +65,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigateToAd
           <Text style={styles.greeting}>Hello, {user?.name || 'Farmer'}</Text>
           <Text style={styles.farmName}>{user?.farmName || 'Bovix Farm'}</Text>
         </View>
-        <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
       </View>
 
       {loading ? (
@@ -137,7 +136,12 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigateToAd
             recentCattle.map((cow) => {
               const badge = getStatusBadge(cow.status);
               return (
-                <View key={cow.id} style={styles.cattleCard}>
+                <TouchableOpacity
+                  key={cow.id}
+                  style={styles.cattleCard}
+                  onPress={() => setSelectedCow(cow)}
+                  activeOpacity={0.85}
+                >
                   <View style={styles.cattleCardHeader}>
                     <View style={styles.cattleInfo}>
                       {cow.imageUri ? (
@@ -166,16 +170,23 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigateToAd
                     <Text style={styles.yieldText}>
                       Yield: <Text style={styles.yieldVal}>{cow.dailyMilkYieldLiters} L/day</Text>
                     </Text>
-                    <Text style={styles.healthText}>
-                      Status: {cow.healthStatus === 'healthy' ? '💚 Healthy' : '⚠️ Attention'}
+                    <Text style={styles.tapToViewText}>
+                      Tap to view details 🔍
                     </Text>
                   </View>
-                </View>
+                </TouchableOpacity>
               );
             })
           )}
         </ScrollView>
       )}
+
+      {/* Cattle Details Modal */}
+      <CattleDetailsModal
+        visible={!!selectedCow}
+        cow={selectedCow}
+        onClose={() => setSelectedCow(null)}
+      />
     </SafeAreaView>
   );
 };
@@ -203,19 +214,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#10B981',
     marginTop: 2,
-  },
-  logoutBtn: {
-    backgroundColor: '#1E293B',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  logoutText: {
-    color: '#EF4444',
-    fontSize: 12,
-    fontWeight: '600',
   },
   loadingContainer: {
     flex: 1,
@@ -405,5 +403,10 @@ const styles = StyleSheet.create({
   healthText: {
     color: '#CBD5E1',
     fontSize: 12,
+  },
+  tapToViewText: {
+    color: '#10B981',
+    fontSize: 12,
+    fontWeight: '600',
   },
 });
