@@ -1,0 +1,34 @@
+{
+  "cli": {
+    "version": ">= 10.0.0"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal",
+      "channel": "preview",
+      "env": {
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyDXCIOM0j2zyRupcE35Ik4gybsECr9lqWw",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "bovix-test.firebaseapp.com",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "bovix-test",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "bovix-test.firebasestorage.app",
+        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "1070426270477",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:1070426270477:web:18c98172fd2f7c8116de44",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "1070426270477-4r5i8j7koakmq6a2vgt246hfoa7vk4rv.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "1070426270477-4mrj02sp0iegm17n5pc68sl868msa65v.apps.googleusercontent.com"
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "production": {
+      "channel": "production"
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

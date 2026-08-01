@@ -12,6 +12,7 @@ export interface Cattle {
   lastMilkingTime?: string;
   healthStatus: 'healthy' | 'needs_attention' | 'under_treatment';
   imageUri?: string;
+  images?: string[];
   medicalHistory: string;
   calvesDelivered: number;
 }

@@ -1,15 +1,23 @@
 {
   "expo": {
     "name": "Bovix",
-    "slug": "Bovix",
+    "slug": "ravindu",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/e96f4145-a0c1-4d97-a240-bc3d0755192d"
+    },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.bovix.app"
     },
     "android": {
+      "package": "com.bovix.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -19,6 +27,15 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "e96f4145-a0c1-4d97-a240-bc3d0755192d"
+      }
+    },
+    "owner": "ravinducdasanayakas-team",
+    "plugins": [
+      "@react-native-community/datetimepicker"
+    ]
   }
 }

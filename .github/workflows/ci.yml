@@ -1,0 +1,31 @@
+name: Bovix CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  lint-and-test:
+    name: Build Verification & Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Project Dependencies
+        run: npm ci
+
+      - name: Run TypeScript Type Checker
+        run: npx tsc --noEmit
+
+      - name: Run Jest Test Suite
+        run: npm test -- --passWithNoTests
