@@ -17,6 +17,7 @@ import {
   deleteReceiptUseCase,
 } from '../../di/container';
 import { MilkReconciliationComparison } from '../../domain/entities/cattle';
+import { AppDatePicker, formatDateFriendly } from '../components/AppDatePicker';
 
 export const ReconciliationScreen: React.FC = () => {
   const todayStr = new Date().toISOString().split('T')[0];
@@ -24,11 +25,14 @@ export const ReconciliationScreen: React.FC = () => {
   const [comparisons, setComparisons] = useState<MilkReconciliationComparison[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Date Filter State
+  const [selectedFilterDate, setSelectedFilterDate] = useState<string>('');
+
   // Form Modal state
   const [modalVisible, setModalVisible] = useState(false);
   const [receiptDate, setReceiptDate] = useState(todayStr);
   const [receiptNumber, setReceiptNumber] = useState('');
-  const [companyName, setCompanyName] = useState('Lactalis Dairy Co.');
+  const [companyName, setCompanyName] = useState('Cargills Dairy Co.');
   const [companyScaleKg, setCompanyScaleKg] = useState('');
   const [pricePerKg, setPricePerKg] = useState('0.85');
   const [fatPercentage, setFatPercentage] = useState('4.2');
@@ -104,9 +108,14 @@ export const ReconciliationScreen: React.FC = () => {
     ]);
   };
 
+  // Filtered comparisons logic
+  const displayedComparisons = selectedFilterDate
+    ? comparisons.filter((c) => c.date === selectedFilterDate)
+    : comparisons;
+
   // Metric aggregates
-  const totalFarmLoggedKg = comparisons.reduce((acc, c) => acc + c.farmLoggedKg, 0);
-  const totalCompanyReceiptKg = comparisons.reduce((acc, c) => acc + c.companyReceiptKg, 0);
+  const totalFarmLoggedKg = displayedComparisons.reduce((acc, c) => acc + c.farmLoggedKg, 0);
+  const totalCompanyReceiptKg = displayedComparisons.reduce((acc, c) => acc + c.companyReceiptKg, 0);
   const totalDiffKg = Math.round((totalCompanyReceiptKg - totalFarmLoggedKg) * 10) / 10;
 
   return (
@@ -119,7 +128,10 @@ export const ReconciliationScreen: React.FC = () => {
         </View>
         <TouchableOpacity
           style={styles.addBtn}
-          onPress={() => setModalVisible(true)}
+          onPress={() => {
+            setReceiptDate(todayStr);
+            setModalVisible(true);
+          }}
           activeOpacity={0.8}
         >
           <Text style={styles.addBtnText}>+ Log Slip</Text>
@@ -135,7 +147,9 @@ export const ReconciliationScreen: React.FC = () => {
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {/* Summary Audit Card */}
           <View style={styles.auditCard}>
-            <Text style={styles.auditTitle}>⚖️ Total Scale Variance Summary</Text>
+            <Text style={styles.auditTitle}>
+              ⚖️ {selectedFilterDate ? `Variance Summary (${formatDateFriendly(selectedFilterDate)})` : 'Total Scale Variance Summary'}
+            </Text>
             <View style={styles.auditGrid}>
               <View style={styles.auditItem}>
                 <Text style={styles.auditVal}>{totalFarmLoggedKg.toFixed(1)} KG</Text>
@@ -161,26 +175,56 @@ export const ReconciliationScreen: React.FC = () => {
             </View>
           </View>
 
-          {/* Comparison Cards list */}
-          <Text style={styles.sectionTitle}>Daily Reconciliation Logs</Text>
+          {/* Header & Date Filter Bar */}
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitle}>Daily Reconciliation Logs</Text>
+            {selectedFilterDate ? (
+              <TouchableOpacity
+                onPress={() => setSelectedFilterDate('')}
+                style={styles.clearFilterBtn}
+              >
+                <Text style={styles.clearFilterText}>Show All Dates ✕</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
 
-          {comparisons.length === 0 ? (
+          <View style={styles.filterCard}>
+            <AppDatePicker
+              label="Select Date to Compare Scale Records:"
+              value={selectedFilterDate}
+              onChange={setSelectedFilterDate}
+              placeholder="Showing all dates (Tap to select specific date)"
+              showPresets={true}
+              allowClear={true}
+            />
+          </View>
+
+          {displayedComparisons.length === 0 ? (
             <View style={styles.emptyBanner}>
               <Text style={styles.emptyBannerIcon}>⚖️</Text>
-              <Text style={styles.emptyBannerTitle}>No Receipts Logged</Text>
+              <Text style={styles.emptyBannerTitle}>
+                {selectedFilterDate ? `No Logs for ${formatDateFriendly(selectedFilterDate)}` : 'No Receipts Logged'}
+              </Text>
               <Text style={styles.emptyBannerSubtitle}>
-                Add company paper slips to compare farm tank weight against official factory receipts.
+                {selectedFilterDate
+                  ? 'No reconciliation records match the selected date. Add a company paper slip or select another date.'
+                  : 'Add company paper slips to compare farm tank weight against official factory receipts.'}
               </Text>
               <TouchableOpacity
                 style={styles.bannerActionBtn}
-                onPress={() => setModalVisible(true)}
+                onPress={() => {
+                  if (selectedFilterDate) setReceiptDate(selectedFilterDate);
+                  setModalVisible(true);
+                }}
                 activeOpacity={0.8}
               >
-                <Text style={styles.bannerActionBtnText}>+ Log Company Paper Slip</Text>
+                <Text style={styles.bannerActionBtnText}>
+                  + Log Company Paper Slip for {selectedFilterDate ? formatDateFriendly(selectedFilterDate) : 'Today'}
+                </Text>
               </TouchableOpacity>
             </View>
           ) : (
-            comparisons.map((item) => {
+            displayedComparisons.map((item) => {
               const hasReceipt = !!item.receipt;
 
               return (
@@ -236,8 +280,8 @@ export const ReconciliationScreen: React.FC = () => {
                         item.status === 'match'
                           ? styles.bgMatch
                           : item.status === 'minor_discrepancy'
-                          ? styles.bgWarn
-                          : styles.bgAlert,
+                            ? styles.bgWarn
+                            : styles.bgAlert,
                       ]}
                     >
                       <Text
@@ -246,19 +290,17 @@ export const ReconciliationScreen: React.FC = () => {
                           item.status === 'match'
                             ? styles.textMatch
                             : item.status === 'minor_discrepancy'
-                            ? styles.textWarn
-                            : styles.textAlert,
+                              ? styles.textWarn
+                              : styles.textAlert,
                         ]}
                       >
                         {item.status === 'match'
-                          ? `✅ Exact Match / Low Variance (${item.differenceKg > 0 ? '+' : ''}${
-                              item.differenceKg
-                            } KG, ${item.variancePercentage}%)`
+                          ? `✅ Exact Match / Low Variance (${item.differenceKg > 0 ? '+' : ''}${item.differenceKg
+                          } KG, ${item.variancePercentage}%)`
                           : item.status === 'minor_discrepancy'
-                          ? `⚠️ Minor Scale Diff: ${item.differenceKg > 0 ? '+' : ''}${
-                              item.differenceKg
+                            ? `⚠️ Minor Scale Diff: ${item.differenceKg > 0 ? '+' : ''}${item.differenceKg
                             } KG (${item.variancePercentage}%)`
-                          : `🚨 Discrepancy Alert: ${item.differenceKg} KG difference! (${item.variancePercentage}%)`}
+                            : `🚨 Discrepancy Alert: ${item.differenceKg} KG difference! (${item.variancePercentage}%)`}
                       </Text>
 
                       {item.receipt?.totalPayout ? (
@@ -284,16 +326,12 @@ export const ReconciliationScreen: React.FC = () => {
               Input actual milk weight received on dairy company's paper scale receipt
             </Text>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Date (YYYY-MM-DD)</Text>
-              <TextInput
-                style={styles.modalInput}
-                placeholder="2026-07-30"
-                placeholderTextColor="#999"
-                value={receiptDate}
-                onChangeText={setReceiptDate}
-              />
-            </View>
+            <AppDatePicker
+              label="Slip Date *"
+              value={receiptDate}
+              onChange={setReceiptDate}
+              showPresets={true}
+            />
 
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Receipt / Slip No. *</Text>
@@ -451,11 +489,35 @@ const styles = StyleSheet.create({
     height: 28,
     backgroundColor: '#334155',
   },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: '#F8FAFC',
-    marginBottom: 12,
+  },
+  clearFilterBtn: {
+    backgroundColor: '#334155',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  clearFilterText: {
+    color: '#F87171',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  filterCard: {
+    backgroundColor: '#1E293B',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#334155',
   },
   emptyBanner: {
     backgroundColor: '#1E293B',
