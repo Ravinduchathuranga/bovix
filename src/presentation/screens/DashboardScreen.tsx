@@ -7,10 +7,11 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Image,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
-import { getDashboardDataUseCase } from '../../di/container';
+import { getDashboardDataUseCase, deleteCattleUseCase } from '../../di/container';
 import { Cattle, DashboardMetrics } from '../../domain/entities/cattle';
 import { CattleDetailsModal } from '../components/CattleDetailsModal';
 
@@ -55,6 +56,30 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigateToAd
       default:
         return { label: status, bg: '#334155', color: '#94A3B8' };
     }
+  };
+
+  const handleDeleteCattle = (cowId: string, cowName: string) => {
+    Alert.alert(
+      'Delete Cattle Record',
+      `Are you sure you want to permanently delete "${cowName}" from your farm records? This action cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setSelectedCow(null);
+              await deleteCattleUseCase.execute(cowId);
+              loadData();
+              Alert.alert('Deleted', `${cowName} has been removed from your farm.`);
+            } catch (err: any) {
+              Alert.alert('Error', err.message || 'Failed to delete cattle.');
+            }
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -186,6 +211,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigateToAd
         visible={!!selectedCow}
         cow={selectedCow}
         onClose={() => setSelectedCow(null)}
+        onDelete={handleDeleteCattle}
       />
     </SafeAreaView>
   );
