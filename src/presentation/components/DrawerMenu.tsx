@@ -8,6 +8,7 @@ import {
   Animated,
   Dimensions,
   TouchableWithoutFeedback,
+  Easing,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
@@ -30,41 +31,80 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({
   onClose,
   activeTab,
   onSelectTab,
-  onNavigateToAddCattle,
 }) => {
   const { user, logout } = useAuth();
+
+  // Animation values
   const slideAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
+  // Staggered content animations
+  const headerAnim = useRef(new Animated.Value(0)).current;
+  const itemsAnim = useRef(new Animated.Value(0)).current;
+  const footerAnim = useRef(new Animated.Value(0)).current;
+
   useEffect(() => {
     if (isOpen) {
+      // Reset stagger values
+      headerAnim.setValue(0);
+      itemsAnim.setValue(0);
+      footerAnim.setValue(0);
+
+      // 1. Spring slide the drawer in
       Animated.parallel([
-        Animated.timing(slideAnim, {
+        Animated.spring(slideAnim, {
           toValue: 0,
-          duration: 250,
+          friction: 8,
+          tension: 70,
           useNativeDriver: true,
         }),
         Animated.timing(fadeAnim, {
           toValue: 1,
-          duration: 250,
+          duration: 260,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      // 2. Stagger slide-in interior elements
+      Animated.stagger(60, [
+        Animated.timing(headerAnim, {
+          toValue: 1,
+          duration: 220,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(itemsAnim, {
+          toValue: 1,
+          duration: 240,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(footerAnim, {
+          toValue: 1,
+          duration: 220,
+          easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
       ]).start();
     } else {
+      // Smooth exit
       Animated.parallel([
         Animated.timing(slideAnim, {
           toValue: -DRAWER_WIDTH,
-          duration: 200,
+          duration: 220,
+          easing: Easing.in(Easing.quad),
           useNativeDriver: true,
         }),
         Animated.timing(fadeAnim, {
           toValue: 0,
           duration: 200,
+          easing: Easing.in(Easing.quad),
           useNativeDriver: true,
         }),
       ]).start();
     }
-  }, [isOpen, slideAnim, fadeAnim]);
+  }, [isOpen, slideAnim, fadeAnim, headerAnim, itemsAnim, footerAnim]);
 
   if (!isOpen) return null;
 
@@ -72,6 +112,22 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({
     onClose();
     setTimeout(action, 150);
   };
+
+  // Interpolated slide transforms for staggered elements
+  const headerTranslateX = headerAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-24, 0],
+  });
+
+  const itemsTranslateX = itemsAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-30, 0],
+  });
+
+  const footerTranslateX = footerAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-20, 0],
+  });
 
   return (
     <Modal transparent visible={isOpen} onRequestClose={onClose} animationType="none">
@@ -89,8 +145,16 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({
           ]}
         >
           <SafeAreaView style={styles.safeArea}>
-            {/* Header / Profile section */}
-            <View style={styles.profileHeader}>
+            {/* Header / Profile section (Staggered) */}
+            <Animated.View
+              style={[
+                styles.profileHeader,
+                {
+                  opacity: headerAnim,
+                  transform: [{ translateX: headerTranslateX }],
+                },
+              ]}
+            >
               <View style={styles.avatarCircle}>
                 <Text style={styles.avatarText}>
                   {user?.name ? user.name.charAt(0).toUpperCase() : 'B'}
@@ -107,12 +171,20 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({
                   {user?.email || ''}
                 </Text>
               </View>
-            </View>
+            </Animated.View>
 
             <View style={styles.divider} />
 
-            {/* Menu Items */}
-            <View style={styles.menuList}>
+            {/* Menu Items (Staggered) */}
+            <Animated.View
+              style={[
+                styles.menuList,
+                {
+                  opacity: itemsAnim,
+                  transform: [{ translateX: itemsTranslateX }],
+                },
+              ]}
+            >
               <Text style={styles.sectionHeader}>NAVIGATION</Text>
 
               <TouchableOpacity
@@ -160,10 +232,18 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({
                   Settings
                 </Text>
               </TouchableOpacity>
-            </View>
+            </Animated.View>
 
-            {/* Footer / Logout */}
-            <View style={styles.footer}>
+            {/* Footer / Logout (Staggered) */}
+            <Animated.View
+              style={[
+                styles.footer,
+                {
+                  opacity: footerAnim,
+                  transform: [{ translateX: footerTranslateX }],
+                },
+              ]}
+            >
               <TouchableOpacity
                 style={styles.logoutBtn}
                 onPress={() => handleNav(logout)}
@@ -172,7 +252,7 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({
                 <Feather name="log-out" size={20} color="#EF4444" />
                 <Text style={styles.logoutText}>Log Out</Text>
               </TouchableOpacity>
-            </View>
+            </Animated.View>
           </SafeAreaView>
         </Animated.View>
       </View>
@@ -196,10 +276,10 @@ const styles = StyleSheet.create({
     borderRightWidth: 1,
     borderRightColor: '#334155',
     shadowColor: '#000',
-    shadowOffset: { width: 4, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 16,
+    shadowOffset: { width: 6, height: 0 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 20,
   },
   safeArea: {
     flex: 1,
@@ -220,6 +300,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
   },
   avatarText: {
     color: '#FFFFFF',
@@ -244,9 +328,6 @@ const styles = StyleSheet.create({
     color: '#64748B',
     fontSize: 12,
     marginTop: 2,
-  },
-  closeBtn: {
-    padding: 6,
   },
   divider: {
     height: 1,
