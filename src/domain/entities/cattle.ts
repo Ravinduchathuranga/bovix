@@ -30,7 +30,6 @@ export interface BulkMilkRecord {
   date: string; // YYYY-MM-DD
   session: 'Morning' | 'Evening';
   amountKg: number;
-  fatPercentage?: number;
   notes?: string;
   createdAt: string;
 }
