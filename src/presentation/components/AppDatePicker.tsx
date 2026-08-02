@@ -21,37 +21,8 @@ interface AppDatePickerProps {
   maxDate?: Date;
 }
 
-// Helper to format Date object into "YYYY-MM-DD"
-export const formatDateToISO = (d: Date): string => {
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
-
-// Helper to format "YYYY-MM-DD" into human-friendly format "Sat, Aug 1, 2026"
-export const formatDateFriendly = (dateStr: string): string => {
-  if (!dateStr) return '';
-  const parts = dateStr.split('-');
-  if (parts.length !== 3) return dateStr;
-  const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
-  if (isNaN(d.getTime())) return dateStr;
-
-  const todayStr = formatDateToISO(new Date());
-  const yesterdayDate = new Date();
-  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-  const yesterdayStr = formatDateToISO(yesterdayDate);
-
-  if (dateStr === todayStr) return `Today (${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`;
-  if (dateStr === yesterdayStr) return `Yesterday (${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`;
-
-  return d.toLocaleDateString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-};
+import { formatDateToISO, formatDateFriendly } from '../utils/dateUtils';
+export { formatDateToISO, formatDateFriendly };
 
 export const AppDatePicker: React.FC<AppDatePickerProps> = ({
   label,
