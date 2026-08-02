@@ -278,18 +278,7 @@ export const DailyMilkingScreen: React.FC = () => {
                       </Text>
                     ) : null}
                   </View>
-                ) : (
-                  <TouchableOpacity
-                    style={styles.addSlipActionBtn}
-                    onPress={() => {
-                      setReceiptDate(selectedFilterDate);
-                      setSlipModalVisible(true);
-                    }}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.addSlipActionText}>+ Add Paper Slip for {formatDateFriendly(selectedFilterDate)}</Text>
-                  </TouchableOpacity>
-                )}
+                ) : null}
               </View>
             ) : null}
           </View>
@@ -297,15 +286,6 @@ export const DailyMilkingScreen: React.FC = () => {
           {/* SECTION 1: Local Farm Milk Collection Log */}
           <View style={styles.sectionHeaderRow}>
             <Text style={styles.sectionTitle}>1. Local Milk Collection Logs</Text>
-            {/* <TouchableOpacity
-              style={styles.smallAddBtn}
-              onPress={() => {
-                setRecordDate(selectedFilterDate || todayStr);
-                setMilkModalVisible(true);
-              }}
-            >
-              <Text style={styles.smallAddBtnText}>+ Log Yield</Text>
-            </TouchableOpacity> */}
           </View>
 
           {displayedMilkRecords.length === 0 ? (
@@ -363,15 +343,6 @@ export const DailyMilkingScreen: React.FC = () => {
           {/* SECTION 2: Company Compare Slip */}
           <View style={[styles.sectionHeaderRow, { marginTop: 24 }]}>
             <Text style={styles.sectionTitle}>2. Company Paper Compare Slip</Text>
-            {/* <TouchableOpacity
-              style={styles.smallAddBtn}
-              onPress={() => {
-                setReceiptDate(selectedFilterDate || todayStr);
-                setSlipModalVisible(true);
-              }}
-            >
-              <Text style={styles.smallAddBtnText}>+ Add Slip</Text>
-            </TouchableOpacity> */}
           </View>
 
           {currentReconciliation?.receipt ? (
