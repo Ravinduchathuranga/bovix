@@ -87,8 +87,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigateToAd
       {/* Top App Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>Hello, {user?.name || 'Farmer'}</Text>
-          <Text style={styles.farmName}>{user?.farmName || 'Bovix Farm'}</Text>
+          <Text style={styles.greeting}>
+            =
+          </Text>
+          {/* <Text style={styles.greeting}>Hello, {user?.name || 'Farmer'}</Text> */}
+          {/* <Text style={styles.farmName}>{user?.farmName || 'Bovix Farm'}</Text> */}
         </View>
       </View>
 
