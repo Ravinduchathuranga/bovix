@@ -3,7 +3,7 @@ import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-export type TabType = 'dashboard' | 'milking' | 'settings';
+export type TabType = 'dashboard' | 'cattle' | 'milking' | 'settings';
 
 interface BottomTabsProps {
   activeTab: TabType;
@@ -19,7 +19,7 @@ export const BottomTabs: React.FC<BottomTabsProps> = ({ activeTab, onSelectTab }
           onPress={() => onSelectTab('dashboard')}
           activeOpacity={0.7}
         >
-          <Feather name="home" size={24} color="white" />
+          <Feather name="home" size={22} color={activeTab === 'dashboard' ? '#10B981' : '#94A3B8'} />
           <Text style={[styles.tabLabel, activeTab === 'dashboard' && styles.activeTabLabel]}>
             Dashboard
           </Text>
@@ -30,7 +30,7 @@ export const BottomTabs: React.FC<BottomTabsProps> = ({ activeTab, onSelectTab }
           onPress={() => onSelectTab('milking')}
           activeOpacity={0.7}
         >
-          <Feather name="file-text" size={24} color="white" />
+          <Feather name="file-text" size={22} color={activeTab === 'milking' ? '#10B981' : '#94A3B8'} />
           <Text style={[styles.tabLabel, activeTab === 'milking' && styles.activeTabLabel]}>
             Daily Logs
           </Text>
@@ -62,9 +62,6 @@ const styles = StyleSheet.create({
   activeTabButton: {
     borderTopWidth: 2,
     borderTopColor: '#10B981',
-  },
-  tabIcon: {
-    fontSize: 18,
   },
   tabLabel: {
     fontSize: 11,
