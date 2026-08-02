@@ -9,6 +9,8 @@ import {
   Modal,
   TextInput,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -181,7 +183,11 @@ export const ReconciliationScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        {/* Header */}
       <View style={styles.header}>
         <View>
           <Text style={styles.headerTitle}>Compare Slip & Audit</Text>
@@ -719,6 +725,7 @@ export const ReconciliationScreen: React.FC = () => {
           </View>
         </View>
       </Modal>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
