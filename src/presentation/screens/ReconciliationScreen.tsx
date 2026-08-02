@@ -15,45 +15,67 @@ import {
   addCompanyReceiptUseCase,
   getReconciliationUseCase,
   deleteReceiptUseCase,
+  getMilkRecordsUseCase,
+  recordBulkMilkUseCase,
+  deleteMilkRecordUseCase,
 } from '../../di/container';
-import { MilkReconciliationComparison } from '../../domain/entities/cattle';
+import { MilkReconciliationComparison, BulkMilkRecord } from '../../domain/entities/cattle';
 import { AppDatePicker, formatDateFriendly } from '../components/AppDatePicker';
+import { DateTabBar } from '../components/DateTabBar';
 
 export const ReconciliationScreen: React.FC = () => {
   const todayStr = new Date().toISOString().split('T')[0];
 
   const [comparisons, setComparisons] = useState<MilkReconciliationComparison[]>([]);
+  const [milkRecords, setMilkRecords] = useState<BulkMilkRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Date Filter State
-  const [selectedFilterDate, setSelectedFilterDate] = useState<string>('');
+  // Synchronized Selected Date (defaults to today)
+  const [selectedFilterDate, setSelectedFilterDate] = useState<string>(todayStr);
 
-  // Form Modal state
-  const [modalVisible, setModalVisible] = useState(false);
+  // Company Paper Slip Modal state
+  const [slipModalVisible, setSlipModalVisible] = useState(false);
   const [receiptDate, setReceiptDate] = useState(todayStr);
   const [receiptNumber, setReceiptNumber] = useState('');
   const [companyName, setCompanyName] = useState('Cargills Dairy Co.');
   const [companyScaleKg, setCompanyScaleKg] = useState('');
   const [pricePerKg, setPricePerKg] = useState('0.85');
   const [fatPercentage, setFatPercentage] = useState('');
-  const [notes, setNotes] = useState('');
-  const [saving, setSaving] = useState(false);
+  const [slipNotes, setSlipNotes] = useState('');
+  const [savingSlip, setSavingSlip] = useState(false);
 
-  const fetchReconciliationData = async () => {
+  // Local Milk Log Modal state
+  const [milkModalVisible, setMilkModalVisible] = useState(false);
+  const [recordDate, setRecordDate] = useState(todayStr);
+  const [session, setSession] = useState<'Morning' | 'Evening'>('Morning');
+  const [amountKg, setAmountKg] = useState('');
+  const [milkNotes, setMilkNotes] = useState('');
+  const [savingMilk, setSavingMilk] = useState(false);
+
+  const fetchAllData = async () => {
     setLoading(true);
     try {
-      const data = await getReconciliationUseCase.execute();
-      setComparisons(data);
+      const [reconData, milkData] = await Promise.all([
+        getReconciliationUseCase.execute(),
+        getMilkRecordsUseCase.execute(),
+      ]);
+      setComparisons(reconData);
+      setMilkRecords(milkData);
     } catch (err) {
-      console.error('Failed to load reconciliation comparison:', err);
+      console.error('Failed to load reconciliation data:', err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchReconciliationData();
+    fetchAllData();
   }, []);
+
+  // Dates that have entries logged
+  const datesWithData = Array.from(
+    new Set([...comparisons.map((c) => c.date), ...milkRecords.map((m) => m.date)])
+  );
 
   const handleSaveReceipt = async () => {
     if (!receiptNumber.trim()) {
@@ -65,7 +87,7 @@ export const ReconciliationScreen: React.FC = () => {
       return;
     }
 
-    setSaving(true);
+    setSavingSlip(true);
     try {
       const kg = parseFloat(companyScaleKg);
       const price = pricePerKg ? parseFloat(pricePerKg) : undefined;
@@ -78,20 +100,43 @@ export const ReconciliationScreen: React.FC = () => {
         kg,
         fat,
         price,
-        notes
+        slipNotes
       );
 
-      setModalVisible(false);
+      setSlipModalVisible(false);
       setReceiptNumber('');
       setCompanyScaleKg('');
       setFatPercentage('');
-      setNotes('');
-      fetchReconciliationData();
+      setSlipNotes('');
+      fetchAllData();
       Alert.alert('Receipt Added', `Logged company scale paper slip #${receiptNumber}`);
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Failed to save company receipt.');
     } finally {
-      setSaving(false);
+      setSavingSlip(false);
+    }
+  };
+
+  const handleSaveBulkMilk = async () => {
+    if (!amountKg || isNaN(parseFloat(amountKg))) {
+      Alert.alert('Validation Error', 'Please enter a valid milk amount in KG.');
+      return;
+    }
+
+    setSavingMilk(true);
+    try {
+      const kg = parseFloat(amountKg);
+      await recordBulkMilkUseCase.execute(recordDate, session, kg, milkNotes);
+
+      setMilkModalVisible(false);
+      setAmountKg('');
+      setMilkNotes('');
+      fetchAllData();
+      Alert.alert('Success', `Recorded ${kg} KG of bulk milk for ${session} session.`);
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Failed to record milk.');
+    } finally {
+      setSavingMilk(false);
     }
   };
 
@@ -103,7 +148,21 @@ export const ReconciliationScreen: React.FC = () => {
         style: 'destructive',
         onPress: async () => {
           await deleteReceiptUseCase.execute(id);
-          fetchReconciliationData();
+          fetchAllData();
+        },
+      },
+    ]);
+  };
+
+  const handleDeleteMilkRecord = (id: string, kg: number, date: string) => {
+    Alert.alert('Confirm Delete', `Delete bulk milk record of ${kg} KG from ${date}?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          await deleteMilkRecordUseCase.execute(id);
+          fetchAllData();
         },
       },
     ]);
@@ -114,120 +173,182 @@ export const ReconciliationScreen: React.FC = () => {
     ? comparisons.filter((c) => c.date === selectedFilterDate)
     : comparisons;
 
-  // Metric aggregates
-  const totalFarmLoggedKg = displayedComparisons.reduce((acc, c) => acc + c.farmLoggedKg, 0);
-  const totalCompanyReceiptKg = displayedComparisons.reduce((acc, c) => acc + c.companyReceiptKg, 0);
-  const totalDiffKg = Math.round((totalCompanyReceiptKg - totalFarmLoggedKg) * 10) / 10;
+  const currentReconciliation = comparisons.find((c) => c.date === selectedFilterDate);
+
+  const displayedMilkRecords = selectedFilterDate
+    ? milkRecords.filter((m) => m.date === selectedFilterDate)
+    : milkRecords;
 
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.headerTitle}>Scale Comparison</Text>
-          <Text style={styles.headerSubtitle}>Farm Scale vs Company Slip Weight</Text>
+          <Text style={styles.headerTitle}>Compare Slip & Audit</Text>
+          <Text style={styles.headerSubtitle}>Scale Weight & Payout Discrepancy Tool</Text>
         </View>
         <TouchableOpacity
           style={styles.addBtn}
           onPress={() => {
-            setReceiptDate(todayStr);
-            setModalVisible(true);
+            setReceiptDate(selectedFilterDate || todayStr);
+            setSlipModalVisible(true);
           }}
           activeOpacity={0.8}
         >
-          <Text style={styles.addBtnText}>+ Log Slip</Text>
+          <Text style={styles.addBtnText}>+ Compare Slip</Text>
         </TouchableOpacity>
       </View>
 
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#10B981" />
-          <Text style={styles.loadingText}>Comparing Scale Records...</Text>
+          <Text style={styles.loadingText}>Calculating Scale Variance & Slips...</Text>
         </View>
       ) : (
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Summary Audit Card */}
-          <View style={styles.auditCard}>
-            <Text style={styles.auditTitle}>
-              ⚖️ {selectedFilterDate ? `Variance Summary (${formatDateFriendly(selectedFilterDate)})` : 'Total Scale Variance Summary'}
+          {/* Interactive Synchronized Horizontal Date Tab Bar */}
+          <DateTabBar
+            selectedDate={selectedFilterDate}
+            onSelectDate={setSelectedFilterDate}
+            datesWithData={datesWithData}
+          />
+
+          {/* Synchronized Date Summary Card */}
+          <View style={styles.reconSummaryBox}>
+            <Text style={styles.reconBoxTitle}>
+              🗓️ {selectedFilterDate ? formatDateFriendly(selectedFilterDate) : 'All Logged Dates Scale Reconciliation'}
             </Text>
-            <View style={styles.auditGrid}>
-              <View style={styles.auditItem}>
-                <Text style={styles.auditVal}>{totalFarmLoggedKg.toFixed(1)} KG</Text>
-                <Text style={styles.auditLbl}>Your Farm Scale</Text>
-              </View>
-              <View style={styles.auditDivider} />
-              <View style={styles.auditItem}>
-                <Text style={styles.auditVal}>{totalCompanyReceiptKg.toFixed(1)} KG</Text>
-                <Text style={styles.auditLbl}>Company Receipt</Text>
-              </View>
-              <View style={styles.auditDivider} />
-              <View style={styles.auditItem}>
-                <Text
-                  style={[
-                    styles.auditVal,
-                    { color: totalDiffKg < 0 ? '#F87171' : totalDiffKg > 0 ? '#34D399' : '#F8FAFC' },
-                  ]}
-                >
-                  {totalDiffKg > 0 ? `+${totalDiffKg}` : totalDiffKg} KG
-                </Text>
-                <Text style={styles.auditLbl}>Net Difference</Text>
-              </View>
-            </View>
+
+            {selectedFilterDate && currentReconciliation ? (
+              <>
+                <View style={styles.reconRow}>
+                  <View style={styles.reconCol}>
+                    <Text style={styles.reconColLbl}>Farm Logged</Text>
+                    <Text style={styles.reconColVal}>{currentReconciliation.farmLoggedKg} KG</Text>
+                  </View>
+                  <Text style={styles.vsBadge}>VS</Text>
+                  <View style={styles.reconCol}>
+                    <Text style={styles.reconColLbl}>Company Scale</Text>
+                    <Text style={styles.reconColVal}>
+                      {currentReconciliation.receipt
+                        ? `${currentReconciliation.receipt.companyScaleKg} KG`
+                        : 'Pending Slip'}
+                    </Text>
+                  </View>
+                  <View style={styles.reconCol}>
+                    <Text style={styles.reconColLbl}>Scale Variance</Text>
+                    <Text
+                      style={[
+                        styles.reconColVal,
+                        currentReconciliation.status === 'match'
+                          ? styles.textMatch
+                          : currentReconciliation.status === 'minor_discrepancy'
+                          ? styles.textWarn
+                          : styles.textAlert,
+                      ]}
+                    >
+                      {currentReconciliation.differenceKg > 0 ? '+' : ''}
+                      {currentReconciliation.differenceKg} KG
+                    </Text>
+                  </View>
+                </View>
+
+                {currentReconciliation.receipt ? (
+                  <View
+                    style={[
+                      styles.statusBanner,
+                      currentReconciliation.status === 'match'
+                        ? styles.bgMatch
+                        : currentReconciliation.status === 'minor_discrepancy'
+                        ? styles.bgWarn
+                        : styles.bgAlert,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.statusText,
+                        currentReconciliation.status === 'match'
+                          ? styles.textMatch
+                          : currentReconciliation.status === 'minor_discrepancy'
+                          ? styles.textWarn
+                          : styles.textAlert,
+                      ]}
+                    >
+                      {currentReconciliation.status === 'match'
+                        ? `✅ Exact Match / Low Variance (${currentReconciliation.differenceKg > 0 ? '+' : ''}${currentReconciliation.differenceKg} KG, ${currentReconciliation.variancePercentage}%)`
+                        : currentReconciliation.status === 'minor_discrepancy'
+                        ? `⚠️ Minor Scale Diff: ${currentReconciliation.differenceKg > 0 ? '+' : ''}${currentReconciliation.differenceKg} KG (${currentReconciliation.variancePercentage}%)`
+                        : `🚨 Discrepancy Alert: ${currentReconciliation.differenceKg} KG difference! (${currentReconciliation.variancePercentage}%)`}
+                    </Text>
+
+                    {currentReconciliation.receipt.companyFatPercentage !== undefined ? (
+                      <Text style={styles.payoutText}>
+                        Company Tested Fat: {currentReconciliation.receipt.companyFatPercentage}%
+                      </Text>
+                    ) : null}
+
+                    {currentReconciliation.receipt.totalPayout ? (
+                      <Text style={styles.payoutText}>
+                        Company Payout: RS: {currentReconciliation.receipt.totalPayout.toFixed(2)}
+                      </Text>
+                    ) : null}
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    style={styles.addSlipActionBtn}
+                    onPress={() => {
+                      setReceiptDate(selectedFilterDate);
+                      setSlipModalVisible(true);
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.addSlipActionText}>+ Add Paper Slip for {formatDateFriendly(selectedFilterDate)}</Text>
+                  </TouchableOpacity>
+                )}
+              </>
+            ) : (
+              <Text style={styles.emptyText}>Select a date from the date bar above to view detailed scale reconciliation.</Text>
+            )}
           </View>
 
-          {/* Header & Date Filter Bar */}
+          {/* SECTION 1: Company Paper Compare Slips */}
           <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>Daily Reconciliation Logs</Text>
-            {selectedFilterDate ? (
-              <TouchableOpacity
-                onPress={() => setSelectedFilterDate('')}
-                style={styles.clearFilterBtn}
-              >
-                <Text style={styles.clearFilterText}>Show All Dates ✕</Text>
-              </TouchableOpacity>
-            ) : null}
-          </View>
-
-          <View style={styles.filterCard}>
-            <AppDatePicker
-              label="Select Date to Compare Scale Records:"
-              value={selectedFilterDate}
-              onChange={setSelectedFilterDate}
-              placeholder="Showing all dates (Tap to select specific date)"
-              showPresets={true}
-              allowClear={true}
-            />
+            <Text style={styles.sectionTitle}>1. Company Paper Compare Slips</Text>
+            <TouchableOpacity
+              style={styles.smallAddBtn}
+              onPress={() => {
+                setReceiptDate(selectedFilterDate || todayStr);
+                setSlipModalVisible(true);
+              }}
+            >
+              <Text style={styles.smallAddBtnText}>+ Add Slip</Text>
+            </TouchableOpacity>
           </View>
 
           {displayedComparisons.length === 0 ? (
             <View style={styles.emptyBanner}>
               <Text style={styles.emptyBannerIcon}>⚖️</Text>
               <Text style={styles.emptyBannerTitle}>
-                {selectedFilterDate ? `No Logs for ${formatDateFriendly(selectedFilterDate)}` : 'No Receipts Logged'}
-              </Text>
-              <Text style={styles.emptyBannerSubtitle}>
                 {selectedFilterDate
-                  ? 'No reconciliation records match the selected date. Add a company paper slip or select another date.'
-                  : 'Add company paper slips to compare farm tank weight against official factory receipts.'}
+                  ? `No Paper Slip for ${formatDateFriendly(selectedFilterDate)}`
+                  : 'No Company Paper Slips Recorded'}
               </Text>
               <TouchableOpacity
                 style={styles.bannerActionBtn}
                 onPress={() => {
-                  if (selectedFilterDate) setReceiptDate(selectedFilterDate);
-                  setModalVisible(true);
+                  setReceiptDate(selectedFilterDate || todayStr);
+                  setSlipModalVisible(true);
                 }}
                 activeOpacity={0.8}
               >
                 <Text style={styles.bannerActionBtnText}>
-                  + Log Company Paper Slip for {selectedFilterDate ? formatDateFriendly(selectedFilterDate) : 'Today'}
+                  + Add Paper Slip for {selectedFilterDate ? formatDateFriendly(selectedFilterDate) : 'Today'}
                 </Text>
               </TouchableOpacity>
             </View>
           ) : (
             displayedComparisons.map((item) => {
               const hasReceipt = !!item.receipt;
-
               return (
                 <View key={item.date} style={styles.card}>
                   <View style={styles.cardHeader}>
@@ -236,7 +357,9 @@ export const ReconciliationScreen: React.FC = () => {
                       {hasReceipt ? (
                         <Text style={styles.receiptNo}>
                           Slip #{item.receipt?.receiptNumber} • {item.receipt?.companyName}
-                          {item.receipt?.companyFatPercentage !== undefined ? ` • ${item.receipt.companyFatPercentage}% Fat` : ''}
+                          {item.receipt?.companyFatPercentage !== undefined
+                            ? ` • ${item.receipt.companyFatPercentage}% Fat`
+                            : ''}
                         </Text>
                       ) : (
                         <Text style={styles.noReceiptText}>⚠️ Awaiting Company Receipt Slip</Text>
@@ -282,8 +405,8 @@ export const ReconciliationScreen: React.FC = () => {
                         item.status === 'match'
                           ? styles.bgMatch
                           : item.status === 'minor_discrepancy'
-                            ? styles.bgWarn
-                            : styles.bgAlert,
+                          ? styles.bgWarn
+                          : styles.bgAlert,
                       ]}
                     >
                       <Text
@@ -292,17 +415,15 @@ export const ReconciliationScreen: React.FC = () => {
                           item.status === 'match'
                             ? styles.textMatch
                             : item.status === 'minor_discrepancy'
-                              ? styles.textWarn
-                              : styles.textAlert,
+                            ? styles.textWarn
+                            : styles.textAlert,
                         ]}
                       >
                         {item.status === 'match'
-                          ? `✅ Exact Match / Low Variance (${item.differenceKg > 0 ? '+' : ''}${item.differenceKg
-                          } KG, ${item.variancePercentage}%)`
+                          ? `✅ Exact Match / Low Variance (${item.differenceKg > 0 ? '+' : ''}${item.differenceKg} KG, ${item.variancePercentage}%)`
                           : item.status === 'minor_discrepancy'
-                            ? `⚠️ Minor Scale Diff: ${item.differenceKg > 0 ? '+' : ''}${item.differenceKg
-                            } KG (${item.variancePercentage}%)`
-                            : `🚨 Discrepancy Alert: ${item.differenceKg} KG difference! (${item.variancePercentage}%)`}
+                          ? `⚠️ Minor Scale Diff: ${item.differenceKg > 0 ? '+' : ''}${item.differenceKg} KG (${item.variancePercentage}%)`
+                          : `🚨 Discrepancy Alert: ${item.differenceKg} KG difference! (${item.variancePercentage}%)`}
                       </Text>
 
                       {item.receipt?.companyFatPercentage !== undefined ? (
@@ -322,11 +443,79 @@ export const ReconciliationScreen: React.FC = () => {
               );
             })
           )}
+
+          {/* SECTION 2: Local Farm Milk Collection Log under same date section */}
+          <View style={[styles.sectionHeaderRow, { marginTop: 24 }]}>
+            <Text style={styles.sectionTitle}>2. Local Milk Collection Logs</Text>
+            <TouchableOpacity
+              style={styles.smallAddBtn}
+              onPress={() => {
+                setRecordDate(selectedFilterDate || todayStr);
+                setMilkModalVisible(true);
+              }}
+            >
+              <Text style={styles.smallAddBtnText}>+ Log Yield</Text>
+            </TouchableOpacity>
+          </View>
+
+          {displayedMilkRecords.length === 0 ? (
+            <View style={styles.emptyBanner}>
+              <Text style={styles.emptyBannerIcon}>🥛</Text>
+              <Text style={styles.emptyBannerTitle}>
+                {selectedFilterDate
+                  ? `No Local Milk Logged for ${formatDateFriendly(selectedFilterDate)}`
+                  : 'No Local Milk Collections Recorded'}
+              </Text>
+              <TouchableOpacity
+                style={styles.bannerActionBtn}
+                onPress={() => {
+                  setRecordDate(selectedFilterDate || todayStr);
+                  setMilkModalVisible(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.bannerActionBtnText}>
+                  + Record Milk for {selectedFilterDate ? formatDateFriendly(selectedFilterDate) : 'Today'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            displayedMilkRecords.map((rec) => (
+              <View key={rec.id} style={styles.recordCard}>
+                <View style={styles.recordHeader}>
+                  <View>
+                    <Text style={styles.recordDate}>{rec.date}</Text>
+                    <Text style={styles.recordSession}>{rec.session} Collection</Text>
+                  </View>
+
+                  <View style={styles.rightHeaderAction}>
+                    <View style={styles.weightBadge}>
+                      <Text style={styles.weightText}>{rec.amountKg} KG</Text>
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => handleDeleteMilkRecord(rec.id, rec.amountKg, rec.date)}
+                      style={styles.deleteBtn}
+                    >
+                      <Text style={styles.deleteBtnText}>✕</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {rec.notes ? (
+                  <View style={styles.recordFooter}>
+                    <Text style={styles.notesText}>Note: {rec.notes}</Text>
+                  </View>
+                ) : null}
+              </View>
+            ))
+          )}
+
+          <View style={{ height: 40 }} />
         </ScrollView>
       )}
 
-      {/* Add Company Receipt Modal */}
-      <Modal visible={modalVisible} animationType="slide" transparent>
+      {/* Modal 1: Adding Company Paper Slip */}
+      <Modal visible={slipModalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Add Company Paper Slip</Text>
@@ -399,20 +588,131 @@ export const ReconciliationScreen: React.FC = () => {
               />
             </View>
 
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Notes / Quality Remarks (Optional)</Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder="e.g. Received without spillages"
+                placeholderTextColor="#999"
+                value={slipNotes}
+                onChangeText={setSlipNotes}
+              />
+            </View>
+
             <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalVisible(false)}>
+              <TouchableOpacity style={styles.cancelBtn} onPress={() => setSlipModalVisible(false)}>
                 <Text style={styles.cancelBtnText}>Cancel</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.submitBtn}
                 onPress={handleSaveReceipt}
-                disabled={saving}
+                disabled={savingSlip}
               >
-                {saving ? (
+                {savingSlip ? (
                   <ActivityIndicator color="#FFF" />
                 ) : (
                   <Text style={styles.submitBtnText}>Compare Slip</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal 2: Logging Bulk Milk */}
+      <Modal visible={milkModalVisible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Log Bulk Milk Collection</Text>
+            <Text style={styles.modalSubtitle}>Save collected milk in Kilograms (KG)</Text>
+
+            <AppDatePicker
+              label="Collection Date *"
+              value={recordDate}
+              onChange={setRecordDate}
+              showPresets={true}
+            />
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Collection Session</Text>
+              <View style={styles.sessionToggleRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.sessionToggleBtn,
+                    session === 'Morning' && styles.sessionToggleActive,
+                  ]}
+                  onPress={() => setSession('Morning')}
+                >
+                  <Text
+                    style={[
+                      styles.sessionToggleText,
+                      session === 'Morning' && styles.sessionToggleTextActive,
+                    ]}
+                  >
+                    🌅 Morning
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.sessionToggleBtn,
+                    session === 'Evening' && styles.sessionToggleActive,
+                  ]}
+                  onPress={() => setSession('Evening')}
+                >
+                  <Text
+                    style={[
+                      styles.sessionToggleText,
+                      session === 'Evening' && styles.sessionToggleTextActive,
+                    ]}
+                  >
+                    🌆 Evening
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Milk Amount (KG) *</Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder="e.g. 145.5"
+                placeholderTextColor="#999"
+                keyboardType="numeric"
+                value={amountKg}
+                onChangeText={setAmountKg}
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Notes / Tank ID (Optional)</Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder="e.g. Tank 1 Morning Batch"
+                placeholderTextColor="#999"
+                value={milkNotes}
+                onChangeText={setMilkNotes}
+              />
+            </View>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.cancelBtn}
+                onPress={() => setMilkModalVisible(false)}
+              >
+                <Text style={styles.cancelBtnText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.submitBtn}
+                onPress={handleSaveBulkMilk}
+                disabled={savingMilk}
+              >
+                {savingMilk ? (
+                  <ActivityIndicator color="#FFF" />
+                ) : (
+                  <Text style={styles.submitBtnText}>Save Entry</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -438,25 +738,25 @@ const styles = StyleSheet.create({
     borderBottomColor: '#1E293B',
   },
   headerTitle: {
+    color: '#F8FAFC',
     fontSize: 22,
     fontWeight: '800',
-    color: '#F8FAFC',
   },
   headerSubtitle: {
-    fontSize: 13,
     color: '#94A3B8',
+    fontSize: 13,
     marginTop: 2,
   },
   addBtn: {
     backgroundColor: '#10B981',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
   },
   addBtnText: {
-    color: '#FFF',
+    color: '#FFFFFF',
+    fontSize: 14,
     fontWeight: '700',
-    fontSize: 13,
   },
   loadingContainer: {
     flex: 1,
@@ -466,122 +766,87 @@ const styles = StyleSheet.create({
   loadingText: {
     color: '#94A3B8',
     marginTop: 12,
+    fontSize: 14,
   },
   content: {
     flex: 1,
     paddingHorizontal: 20,
     paddingTop: 16,
   },
-  auditCard: {
+  reconSummaryBox: {
     backgroundColor: '#1E293B',
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 16,
     marginBottom: 20,
     borderWidth: 1,
     borderColor: '#334155',
   },
-  auditTitle: {
+  reconBoxTitle: {
     color: '#F8FAFC',
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: '800',
     marginBottom: 12,
   },
-  auditGrid: {
+  reconRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#0F172A',
+    padding: 12,
+    borderRadius: 12,
   },
-  auditItem: {
+  reconCol: {
     alignItems: 'center',
+    flex: 1,
   },
-  auditVal: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#F8FAFC',
-  },
-  auditLbl: {
+  reconColLbl: {
+    color: '#64748B',
     fontSize: 11,
-    color: '#94A3B8',
-    marginTop: 4,
+    fontWeight: '600',
   },
-  auditDivider: {
-    width: 1,
-    height: 28,
-    backgroundColor: '#334155',
+  reconColVal: {
+    color: '#F8FAFC',
+    fontSize: 15,
+    fontWeight: '800',
+    marginTop: 2,
+  },
+  vsBadge: {
+    color: '#10B981',
+    fontWeight: '900',
+    fontSize: 12,
+  },
+  emptyText: {
+    color: '#94A3B8',
+    fontSize: 13,
+    fontStyle: 'italic',
   },
   sectionHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#F8FAFC',
-  },
-  clearFilterBtn: {
-    backgroundColor: '#334155',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  clearFilterText: {
-    color: '#F87171',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  filterCard: {
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  emptyBanner: {
-    backgroundColor: '#1E293B',
-    borderRadius: 16,
-    padding: 24,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#334155',
-    borderStyle: 'dashed',
-    marginVertical: 12,
-  },
-  emptyBannerIcon: {
-    fontSize: 44,
     marginBottom: 12,
   },
-  emptyBannerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+  sectionTitle: {
     color: '#F8FAFC',
-    marginBottom: 6,
+    fontSize: 16,
+    fontWeight: '800',
   },
-  emptyBannerSubtitle: {
-    fontSize: 13,
-    color: '#94A3B8',
-    textAlign: 'center',
-    marginBottom: 16,
-    lineHeight: 18,
+  smallAddBtn: {
+    backgroundColor: '#334155',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
   },
-  bannerActionBtn: {
-    backgroundColor: '#10B981',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 10,
-  },
-  bannerActionBtnText: {
-    color: '#FFFFFF',
+  smallAddBtnText: {
+    color: '#38BDF8',
+    fontSize: 12,
     fontWeight: '700',
-    fontSize: 14,
   },
   card: {
     backgroundColor: '#1E293B',
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 16,
-    marginBottom: 14,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: '#334155',
   },
@@ -592,21 +857,21 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   cardDate: {
-    fontSize: 16,
-    fontWeight: '700',
     color: '#F8FAFC',
+    fontSize: 16,
+    fontWeight: '800',
   },
   receiptNo: {
-    fontSize: 12,
     color: '#10B981',
+    fontSize: 13,
+    fontWeight: '700',
     marginTop: 2,
-    fontWeight: '600',
   },
   noReceiptText: {
-    fontSize: 12,
     color: '#F59E0B',
+    fontSize: 13,
+    fontWeight: '600',
     marginTop: 2,
-    fontStyle: 'italic',
   },
   deleteBtn: {
     padding: 4,
@@ -621,138 +886,256 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#0F172A',
-    borderRadius: 10,
+    borderRadius: 12,
     padding: 12,
-    marginBottom: 10,
+    marginVertical: 4,
   },
   col: {
     flex: 1,
     alignItems: 'center',
   },
   colLabel: {
+    color: '#64748B',
     fontSize: 11,
-    color: '#94A3B8',
-    marginBottom: 4,
+    fontWeight: '600',
+    textTransform: 'uppercase',
   },
   colVal: {
+    color: '#F8FAFC',
     fontSize: 16,
     fontWeight: '800',
-    color: '#F8FAFC',
+    marginTop: 4,
   },
   vsBox: {
-    backgroundColor: '#334155',
     paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
   },
   vsText: {
-    color: '#CBD5E1',
-    fontSize: 10,
+    color: '#64748B',
+    fontSize: 12,
     fontWeight: '800',
   },
   statusBanner: {
+    marginTop: 12,
     padding: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    flexDirection: 'column',
+    borderRadius: 10,
   },
   bgMatch: {
     backgroundColor: '#064E3B',
-    borderColor: '#10B981',
   },
   bgWarn: {
-    backgroundColor: '#45300B',
-    borderColor: '#F59E0B',
+    backgroundColor: '#451A03',
   },
   bgAlert: {
-    backgroundColor: '#451A1A',
-    borderColor: '#EF4444',
+    backgroundColor: '#450A0A',
   },
   statusText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
+    textAlign: 'center',
   },
   textMatch: {
-    color: '#A7F3D0',
+    color: '#34D399',
   },
   textWarn: {
-    color: '#FDE68A',
+    color: '#FBBF24',
   },
   textAlert: {
-    color: '#FCA5A5',
+    color: '#F87171',
   },
   payoutText: {
-    color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '600',
+    color: '#F8FAFC',
+    fontSize: 12,
+    fontWeight: '700',
+    textAlign: 'center',
     marginTop: 4,
   },
-
-  // Modal
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
+  addSlipActionBtn: {
+    marginTop: 10,
+    backgroundColor: '#064E3B',
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignItems: 'center',
   },
-  modalContent: {
+  addSlipActionText: {
+    color: '#34D399',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  recordCard: {
+    backgroundColor: '#1E293B',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  recordHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  recordDate: {
+    color: '#94A3B8',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  recordSession: {
+    color: '#F8FAFC',
+    fontSize: 15,
+    fontWeight: '700',
+    marginTop: 2,
+  },
+  rightHeaderAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  weightBadge: {
+    backgroundColor: '#064E3B',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  weightText: {
+    color: '#34D399',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  recordFooter: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#334155',
+  },
+  notesText: {
+    color: '#94A3B8',
+    fontSize: 12,
+    fontStyle: 'italic',
+  },
+  emptyBanner: {
     backgroundColor: '#1E293B',
     borderRadius: 16,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#F8FAFC',
-  },
-  modalSubtitle: {
-    fontSize: 12,
-    color: '#94A3B8',
-    marginTop: 2,
+    padding: 20,
+    alignItems: 'center',
     marginBottom: 16,
-  },
-  inputGroup: {
-    marginBottom: 12,
-  },
-  inputLabel: {
-    color: '#CBD5E1',
-    fontSize: 12,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  modalInput: {
-    backgroundColor: '#0F172A',
-    borderColor: '#334155',
     borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    color: '#FFFFFF',
+    borderColor: '#334155',
   },
-  modalActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 16,
+  emptyBannerIcon: {
+    fontSize: 32,
+    marginBottom: 8,
   },
-  cancelBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    marginRight: 8,
+  emptyBannerTitle: {
+    color: '#F8FAFC',
+    fontSize: 15,
+    fontWeight: '700',
+    textAlign: 'center',
   },
-  cancelBtnText: {
-    color: '#94A3B8',
-    fontWeight: '600',
-  },
-  submitBtn: {
+  bannerActionBtn: {
     backgroundColor: '#10B981',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 10,
+    marginTop: 12,
+  },
+  bannerActionBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#1E293B',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    borderTopWidth: 1,
+    borderTopColor: '#334155',
+  },
+  modalTitle: {
+    color: '#F8FAFC',
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  modalSubtitle: {
+    color: '#94A3B8',
+    fontSize: 13,
+    marginBottom: 20,
+  },
+  inputGroup: {
+    marginBottom: 16,
+  },
+  inputLabel: {
+    color: '#CBD5E1',
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  modalInput: {
+    backgroundColor: '#0F172A',
+    borderWidth: 1,
+    borderColor: '#334155',
+    borderRadius: 12,
+    padding: 12,
+    color: '#F8FAFC',
+    fontSize: 15,
+  },
+  sessionToggleRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  sessionToggleBtn: {
+    flex: 1,
+    backgroundColor: '#0F172A',
+    borderWidth: 1,
+    borderColor: '#334155',
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  sessionToggleActive: {
+    backgroundColor: '#064E3B',
+    borderColor: '#10B981',
+  },
+  sessionToggleText: {
+    color: '#94A3B8',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  sessionToggleTextActive: {
+    color: '#34D399',
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 12,
+  },
+  cancelBtn: {
+    flex: 1,
+    backgroundColor: '#334155',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  cancelBtnText: {
+    color: '#F8FAFC',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  submitBtn: {
+    flex: 1,
+    backgroundColor: '#10B981',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
   },
   submitBtnText: {
     color: '#FFFFFF',
+    fontSize: 15,
     fontWeight: '700',
   },
 });
