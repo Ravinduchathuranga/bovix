@@ -1,4 +1,4 @@
-import { formatDateToISO, formatDateFriendly } from '../AppDatePicker';
+import { formatDateToISO, formatDateFriendly } from '../../utils/dateUtils';
 
 describe('AppDatePicker Helper Functions', () => {
   describe('formatDateToISO', () => {
