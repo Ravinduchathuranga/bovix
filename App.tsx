@@ -9,11 +9,13 @@ import { AddCattleScreen } from './src/presentation/screens/AddCattleScreen';
 import { DailyMilkingScreen } from './src/presentation/screens/DailyMilkingScreen';
 import { SettingsScreen } from './src/presentation/screens/SettingsScreen';
 import { BottomTabs, TabType } from './src/presentation/components/BottomTabs';
+import { DrawerMenu } from './src/presentation/components/DrawerMenu';
 
 const RootNavigation: React.FC = () => {
   const { user, isLoading } = useAuth();
   const [currentTab, setCurrentTab] = useState<TabType>('dashboard');
   const [showAddCattle, setShowAddCattle] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -44,7 +46,10 @@ const RootNavigation: React.FC = () => {
     switch (currentTab) {
       case 'dashboard':
         return (
-          <DashboardScreen onNavigateToAddCattle={() => setShowAddCattle(true)} />
+          <DashboardScreen
+            onNavigateToAddCattle={() => setShowAddCattle(true)}
+            onOpenDrawer={() => setIsDrawerOpen(true)}
+          />
         );
       case 'milking':
         return <DailyMilkingScreen />;
@@ -52,7 +57,10 @@ const RootNavigation: React.FC = () => {
         return <SettingsScreen />;
       default:
         return (
-          <DashboardScreen onNavigateToAddCattle={() => setShowAddCattle(true)} />
+          <DashboardScreen
+            onNavigateToAddCattle={() => setShowAddCattle(true)}
+            onOpenDrawer={() => setIsDrawerOpen(true)}
+          />
         );
     }
   };
@@ -61,6 +69,13 @@ const RootNavigation: React.FC = () => {
     <View style={styles.container}>
       <View style={styles.screenContainer}>{renderScreen()}</View>
       <BottomTabs activeTab={currentTab} onSelectTab={setCurrentTab} />
+      <DrawerMenu
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        activeTab={currentTab}
+        onSelectTab={setCurrentTab}
+        onNavigateToAddCattle={() => setShowAddCattle(true)}
+      />
     </View>
   );
 };
