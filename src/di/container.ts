@@ -6,6 +6,7 @@ import { LoginUseCase } from '../domain/usecases/LoginUseCase';
 import { GoogleLoginUseCase, SignUpUseCase } from '../domain/usecases/AuthUseCases';
 import { GetDashboardDataUseCase } from '../domain/usecases/GetDashboardDataUseCase';
 import { AddCattleUseCase } from '../domain/usecases/AddCattleUseCase';
+import { DeleteCattleUseCase } from '../domain/usecases/DeleteCattleUseCase';
 import {
   RecordBulkMilkUseCase,
   GetMilkRecordsUseCase,
@@ -29,6 +30,7 @@ export const signUpUseCase = new SignUpUseCase(authRepository);
 
 export const getDashboardDataUseCase = new GetDashboardDataUseCase(cattleRepository);
 export const addCattleUseCase = new AddCattleUseCase(cattleRepository);
+export const deleteCattleUseCase = new DeleteCattleUseCase(cattleRepository);
 
 export const recordBulkMilkUseCase = new RecordBulkMilkUseCase(milkingRepository);
 export const getMilkRecordsUseCase = new GetMilkRecordsUseCase(milkingRepository);
