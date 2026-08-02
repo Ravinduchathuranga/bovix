@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from './src/presentation/context/AuthContext';
 import { LoginScreen } from './src/presentation/screens/LoginScreen';
 import { DashboardScreen } from './src/presentation/screens/DashboardScreen';
+import { CattleScreen } from './src/presentation/screens/CattleScreen';
 import { AddCattleScreen } from './src/presentation/screens/AddCattleScreen';
 import { DailyMilkingScreen } from './src/presentation/screens/DailyMilkingScreen';
 import { SettingsScreen } from './src/presentation/screens/SettingsScreen';
@@ -37,7 +38,7 @@ const RootNavigation: React.FC = () => {
         <AddCattleScreen
           onCattleAdded={() => {
             setShowAddCattle(false);
-            setCurrentTab('dashboard');
+            setCurrentTab('cattle');
           }}
           onCancel={() => setShowAddCattle(false)}
         />
@@ -51,7 +52,17 @@ const RootNavigation: React.FC = () => {
         return (
           <DashboardScreen
             onNavigateToAddCattle={() => setShowAddCattle(true)}
+            onNavigateToSettings={() => setCurrentTab('settings')}
+            onSelectTab={setCurrentTab}
             onOpenDrawer={() => setIsDrawerOpen(true)}
+          />
+        );
+      case 'cattle':
+        return (
+          <CattleScreen
+            onNavigateToAddCattle={() => setShowAddCattle(true)}
+            onOpenDrawer={() => setIsDrawerOpen(true)}
+            onBack={() => setCurrentTab('dashboard')}
           />
         );
       case 'milking':
@@ -62,6 +73,8 @@ const RootNavigation: React.FC = () => {
         return (
           <DashboardScreen
             onNavigateToAddCattle={() => setShowAddCattle(true)}
+            onNavigateToSettings={() => setCurrentTab('settings')}
+            onSelectTab={setCurrentTab}
             onOpenDrawer={() => setIsDrawerOpen(true)}
           />
         );
@@ -75,7 +88,7 @@ const RootNavigation: React.FC = () => {
           {renderScreen()}
         </ScreenTransition>
       </View>
-      {currentTab !== 'settings' && (
+      {currentTab !== 'settings' && currentTab !== 'cattle' && (
         <BottomTabs activeTab={currentTab} onSelectTab={setCurrentTab} />
       )}
       <DrawerMenu
