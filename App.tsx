@@ -4,10 +4,9 @@ import { StyleSheet, View, ActivityIndicator } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from './src/presentation/context/AuthContext';
 import { LoginScreen } from './src/presentation/screens/LoginScreen';
-import { DashboardScreen } from './src/presentation/screens/DashboardScreen';
-import { CattleScreen } from './src/presentation/screens/CattleScreen';
+import { CattleProductionScreen, ProductionSubTab } from './src/presentation/screens/CattleProductionScreen';
+import { StockManagementScreen } from './src/presentation/screens/StockManagementScreen';
 import { AddCattleScreen } from './src/presentation/screens/AddCattleScreen';
-import { DailyMilkingScreen } from './src/presentation/screens/DailyMilkingScreen';
 import { SettingsScreen } from './src/presentation/screens/SettingsScreen';
 import { BottomTabs, TabType } from './src/presentation/components/BottomTabs';
 import { DrawerMenu } from './src/presentation/components/DrawerMenu';
@@ -15,8 +14,10 @@ import { ScreenTransition } from './src/presentation/components/ScreenTransition
 
 const RootNavigation: React.FC = () => {
   const { user, isLoading } = useAuth();
-  const [currentTab, setCurrentTab] = useState<TabType>('dashboard');
+  const [currentTab, setCurrentTab] = useState<TabType>('production');
+  const [productionSubTab, setProductionSubTab] = useState<ProductionSubTab>('dashboard');
   const [showAddCattle, setShowAddCattle] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   if (isLoading) {
@@ -31,14 +32,15 @@ const RootNavigation: React.FC = () => {
     return <LoginScreen />;
   }
 
-  // Show full-screen Add Cattle form (stacked over tabs)
+  // Full Screen View: Add Cattle Form
   if (showAddCattle) {
     return (
       <ScreenTransition screenKey="add-cattle">
         <AddCattleScreen
           onCattleAdded={() => {
             setShowAddCattle(false);
-            setCurrentTab('cattle');
+            setCurrentTab('production');
+            setProductionSubTab('cattle');
           }}
           onCancel={() => setShowAddCattle(false)}
         />
@@ -46,34 +48,35 @@ const RootNavigation: React.FC = () => {
     );
   }
 
+  // Full Screen View: Settings Page
+  if (showSettings) {
+    return (
+      <ScreenTransition screenKey="settings">
+        <SettingsScreen onBack={() => setShowSettings(false)} />
+      </ScreenTransition>
+    );
+  }
+
   const renderScreen = () => {
     switch (currentTab) {
-      case 'dashboard':
+      case 'production':
         return (
-          <DashboardScreen
+          <CattleProductionScreen
+            subSegment={productionSubTab}
             onNavigateToAddCattle={() => setShowAddCattle(true)}
-            onNavigateToSettings={() => setCurrentTab('settings')}
+            onNavigateToSettings={() => setShowSettings(true)}
             onSelectTab={setCurrentTab}
             onOpenDrawer={() => setIsDrawerOpen(true)}
           />
         );
-      case 'cattle':
-        return (
-          <CattleScreen
-            onNavigateToAddCattle={() => setShowAddCattle(true)}
-            onOpenDrawer={() => setIsDrawerOpen(true)}
-            onBack={() => setCurrentTab('dashboard')}
-          />
-        );
-      case 'milking':
-        return <DailyMilkingScreen />;
-      case 'settings':
-        return <SettingsScreen onBack={() => setCurrentTab('dashboard')} />;
+      case 'stock':
+        return <StockManagementScreen />;
       default:
         return (
-          <DashboardScreen
+          <CattleProductionScreen
+            subSegment={productionSubTab}
             onNavigateToAddCattle={() => setShowAddCattle(true)}
-            onNavigateToSettings={() => setCurrentTab('settings')}
+            onNavigateToSettings={() => setShowSettings(true)}
             onSelectTab={setCurrentTab}
             onOpenDrawer={() => setIsDrawerOpen(true)}
           />
@@ -84,7 +87,7 @@ const RootNavigation: React.FC = () => {
   return (
     <View style={styles.container}>
       <View style={styles.screenContainer}>
-        <ScreenTransition screenKey={currentTab}>
+        <ScreenTransition screenKey={`${currentTab}-${productionSubTab}`}>
           {renderScreen()}
         </ScreenTransition>
       </View>
@@ -93,8 +96,10 @@ const RootNavigation: React.FC = () => {
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
         activeTab={currentTab}
+        subSegment={productionSubTab}
         onSelectTab={setCurrentTab}
-        onNavigateToAddCattle={() => setShowAddCattle(true)}
+        onSelectSubSegment={(sub) => setProductionSubTab(sub)}
+        onNavigateToSettings={() => setShowSettings(true)}
       />
     </View>
   );

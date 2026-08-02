@@ -22,10 +22,15 @@ import {
   deleteReceiptUseCase,
 } from '../../di/container';
 import { BulkMilkRecord, MilkReconciliationComparison } from '../../domain/entities/cattle';
+import { Feather } from '@expo/vector-icons';
 import { AppDatePicker, formatDateFriendly } from '../components/AppDatePicker';
 import { DateTabBar } from '../components/DateTabBar';
 
-export const DailyMilkingScreen: React.FC = () => {
+interface DailyMilkingScreenProps {
+  onOpenDrawer?: () => void;
+}
+
+export const DailyMilkingScreen: React.FC<DailyMilkingScreenProps> = ({ onOpenDrawer }) => {
   const todayStr = new Date().toISOString().split('T')[0];
 
   const [records, setRecords] = useState<BulkMilkRecord[]>([]);
@@ -192,12 +197,19 @@ export const DailyMilkingScreen: React.FC = () => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>Local Log & Compare</Text>
-          <Text style={styles.headerSubtitle}>Synchronized Daily Milk & Slip Record</Text>
+        <View style={styles.header}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            {onOpenDrawer && (
+              <TouchableOpacity onPress={onOpenDrawer} style={{ padding: 4 }}>
+                <Feather name="menu" size={24} color="#CBD5E1" />
+              </TouchableOpacity>
+            )}
+            <View>
+              <Text style={styles.headerTitle}>Local Log & Compare</Text>
+              <Text style={styles.headerSubtitle}>Synchronized Daily Milk & Slip Record</Text>
+            </View>
+          </View>
         </View>
-      </View>
 
       {loading ? (
         <View style={styles.loadingContainer}>
