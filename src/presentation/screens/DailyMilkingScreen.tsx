@@ -33,7 +33,6 @@ export const DailyMilkingScreen: React.FC = () => {
   const [recordDate, setRecordDate] = useState(todayStr);
   const [session, setSession] = useState<'Morning' | 'Evening'>('Morning');
   const [amountKg, setAmountKg] = useState('');
-  const [fatPercentage, setFatPercentage] = useState('');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -62,8 +61,7 @@ export const DailyMilkingScreen: React.FC = () => {
     setSaving(true);
     try {
       const kg = parseFloat(amountKg);
-      const fat = fatPercentage ? parseFloat(fatPercentage) : undefined;
-      await recordBulkMilkUseCase.execute(recordDate, session, kg, fat, notes);
+      await recordBulkMilkUseCase.execute(recordDate, session, kg, notes);
 
       setModalVisible(false);
       setAmountKg('');
@@ -223,16 +221,11 @@ export const DailyMilkingScreen: React.FC = () => {
                   </View>
                 </View>
 
-                {(rec.fatPercentage || rec.notes) && (
+                {rec.notes ? (
                   <View style={styles.recordFooter}>
-                    {rec.fatPercentage && (
-                      <Text style={styles.fatText}>
-                        Fat Content: <Text style={styles.fatVal}>{rec.fatPercentage}%</Text>
-                      </Text>
-                    )}
-                    {rec.notes && <Text style={styles.notesText}>Note: {rec.notes}</Text>}
+                    <Text style={styles.notesText}>Note: {rec.notes}</Text>
                   </View>
-                )}
+                ) : null}
               </View>
             ))
           )}
@@ -301,18 +294,6 @@ export const DailyMilkingScreen: React.FC = () => {
                 keyboardType="numeric"
                 value={amountKg}
                 onChangeText={setAmountKg}
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Fat Percentage (%) (Optional)</Text>
-              <TextInput
-                style={styles.modalInput}
-                placeholder="e.g. 4.2"
-                placeholderTextColor="#999"
-                keyboardType="numeric"
-                value={fatPercentage}
-                onChangeText={setFatPercentage}
               />
             </View>
 
