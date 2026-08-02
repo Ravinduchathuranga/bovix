@@ -40,6 +40,7 @@ export const DailyMilkingScreen: React.FC = () => {
   const [recordDate, setRecordDate] = useState(todayStr);
   const [session, setSession] = useState<'Morning' | 'Evening'>('Morning');
   const [amountKg, setAmountKg] = useState('');
+  const [milkFatPercentage, setMilkFatPercentage] = useState('');
   const [milkNotes, setMilkNotes] = useState('');
   const [savingMilk, setSavingMilk] = useState(false);
 
@@ -88,10 +89,12 @@ export const DailyMilkingScreen: React.FC = () => {
     setSavingMilk(true);
     try {
       const kg = parseFloat(amountKg);
-      await recordBulkMilkUseCase.execute(recordDate, session, kg, milkNotes);
+      const fat = milkFatPercentage ? parseFloat(milkFatPercentage) : undefined;
+      await recordBulkMilkUseCase.execute(recordDate, session, kg, fat, milkNotes);
 
       setMilkModalVisible(false);
       setAmountKg('');
+      setMilkFatPercentage('');
       setMilkNotes('');
       fetchAllData();
       Alert.alert('Success', `Recorded ${kg} KG of bulk milk for ${session} session.`);
