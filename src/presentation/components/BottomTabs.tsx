@@ -1,8 +1,9 @@
+import { Feather } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-export type TabType = 'dashboard' | 'milking' | 'reconciliation' | 'settings';
+export type TabType = 'dashboard' | 'milking' | 'settings';
 
 interface BottomTabsProps {
   activeTab: TabType;
@@ -18,7 +19,7 @@ export const BottomTabs: React.FC<BottomTabsProps> = ({ activeTab, onSelectTab }
           onPress={() => onSelectTab('dashboard')}
           activeOpacity={0.7}
         >
-          <Text style={styles.tabIcon}>📊</Text>
+          <Feather name="home" size={24} color="white" />
           <Text style={[styles.tabLabel, activeTab === 'dashboard' && styles.activeTabLabel]}>
             Dashboard
           </Text>
@@ -29,31 +30,9 @@ export const BottomTabs: React.FC<BottomTabsProps> = ({ activeTab, onSelectTab }
           onPress={() => onSelectTab('milking')}
           activeOpacity={0.7}
         >
-          <Text style={styles.tabIcon}>🥛</Text>
+          <Feather name="file-text" size={24} color="white" />
           <Text style={[styles.tabLabel, activeTab === 'milking' && styles.activeTabLabel]}>
-            Local Log
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'reconciliation' && styles.activeTabButton]}
-          onPress={() => onSelectTab('reconciliation')}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.tabIcon}>⚖️</Text>
-          <Text style={[styles.tabLabel, activeTab === 'reconciliation' && styles.activeTabLabel]}>
-            Compare Slip
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'settings' && styles.activeTabButton]}
-          onPress={() => onSelectTab('settings')}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.tabIcon}>⚙️</Text>
-          <Text style={[styles.tabLabel, activeTab === 'settings' && styles.activeTabLabel]}>
-            Settings
+            Daily Logs
           </Text>
         </TouchableOpacity>
       </View>

@@ -10,16 +10,22 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Feather, FontAwesome } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { getDashboardDataUseCase, deleteCattleUseCase } from '../../di/container';
 import { Cattle, DashboardMetrics } from '../../domain/entities/cattle';
 import { CattleDetailsModal } from '../components/CattleDetailsModal';
 
+
 interface DashboardScreenProps {
   onNavigateToAddCattle?: () => void;
+  onOpenDrawer?: () => void;
 }
 
-export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigateToAddCattle }) => {
+export const DashboardScreen: React.FC<DashboardScreenProps> = ({
+  onNavigateToAddCattle,
+  onOpenDrawer,
+}) => {
   const { user } = useAuth();
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [recentCattle, setRecentCattle] = useState<Cattle[]>([]);
@@ -86,8 +92,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ onNavigateToAd
     <SafeAreaView style={styles.container}>
       {/* Top App Header */}
       <View style={styles.header}>
+        <TouchableOpacity onPress={onOpenDrawer} activeOpacity={0.7} style={{ padding: 4 }}>
+          <Feather name="menu" size={24} color="white" />
+        </TouchableOpacity>
         <View>
-          <Text style={styles.greeting}>Hello, {user?.name || 'Farmer'}</Text>
           <Text style={styles.farmName}>{user?.farmName || 'Bovix Farm'}</Text>
         </View>
       </View>
