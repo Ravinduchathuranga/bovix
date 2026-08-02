@@ -9,20 +9,17 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
-import { firebaseConfig } from '../../data/config/firebase';
 
 export const LoginScreen: React.FC = () => {
-  const { login, signUp, loginWithGoogle } = useAuth();
+  const { login, signUp } = useAuth();
   const [isSignUp, setIsSignUp] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
   const handleSubmit = async () => {
@@ -42,22 +39,6 @@ export const LoginScreen: React.FC = () => {
       setErrorMessage(err.message || 'Authentication failed. Please try again.');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    setErrorMessage('');
-    setGoogleLoading(true);
-    try {
-      Alert.alert(
-        'Google OAuth Provider',
-        'Google Sign-In requires an active Web Client ID configured in Google Cloud Console & Firebase OAuth settings. Please use Email/Password sign in for demo authentication.',
-        [{ text: 'OK' }]
-      );
-    } catch (err: any) {
-      setErrorMessage(err.message || 'Google Sign-In failed. Please try again.');
-    } finally {
-      setGoogleLoading(false);
     }
   };
 
@@ -146,7 +127,7 @@ export const LoginScreen: React.FC = () => {
             <TouchableOpacity
               style={[styles.button, loading && styles.buttonDisabled]}
               onPress={handleSubmit}
-              disabled={loading || googleLoading}
+              disabled={loading}
               activeOpacity={0.8}
             >
               {loading ? (
@@ -156,27 +137,9 @@ export const LoginScreen: React.FC = () => {
               )}
             </TouchableOpacity>
 
-            <View style={styles.dividerContainer}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>OR</Text>
-              <View style={styles.dividerLine} />
+            <View style={styles.securityNote}>
+              <Text style={styles.securityText}>🔒 End-to-End Encrypted Cloud Storage</Text>
             </View>
-
-            <TouchableOpacity
-              style={styles.googleButton}
-              onPress={handleGoogleSignIn}
-              disabled={loading || googleLoading}
-              activeOpacity={0.8}
-            >
-              {googleLoading ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <View style={styles.googleBtnContent}>
-                  <Text style={styles.googleIcon}>G</Text>
-                  <Text style={styles.googleBtnText}>Continue with Google</Text>
-                </View>
-              )}
-            </TouchableOpacity>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -310,46 +273,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 16,
   },
-  dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 20,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#334155',
-  },
-  dividerText: {
-    color: '#64748B',
-    paddingHorizontal: 12,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  googleButton: {
-    backgroundColor: '#4285F4',
-    borderRadius: 10,
-    paddingVertical: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  googleBtnContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  googleIcon: {
-    color: '#FFFFFF',
-    fontWeight: '900',
-    fontSize: 18,
-    marginRight: 10,
-  },
-  googleBtnText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 15,
-  },
   securityNote: {
-    marginTop: 24,
+    marginTop: 20,
     alignItems: 'center',
   },
   securityText: {
