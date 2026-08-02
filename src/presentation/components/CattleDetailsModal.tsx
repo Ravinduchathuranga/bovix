@@ -17,6 +17,7 @@ interface CattleDetailsModalProps {
   visible: boolean;
   cow: Cattle | null;
   onClose: () => void;
+  onDelete?: (cowId: string, cowName: string) => void;
 }
 
 const SLIDER_WIDTH = 290;
@@ -25,6 +26,7 @@ export const CattleDetailsModal: React.FC<CattleDetailsModalProps> = ({
   visible,
   cow,
   onClose,
+  onDelete,
 }) => {
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -216,7 +218,20 @@ export const CattleDetailsModal: React.FC<CattleDetailsModalProps> = ({
 
           {/* Action Footer */}
           <View style={styles.footerAction}>
-            <TouchableOpacity style={styles.doneBtn} onPress={onClose} activeOpacity={0.8}>
+            {onDelete && (
+              <TouchableOpacity
+                style={styles.deleteBtn}
+                onPress={() => onDelete(cow.id, cow.name)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.deleteBtnText}>🗑 Delete Cow</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              style={[styles.doneBtn, onDelete ? { flex: 1, marginLeft: 10 } : null]}
+              onPress={onClose}
+              activeOpacity={0.8}
+            >
               <Text style={styles.doneBtnText}>Close Details</Text>
             </TouchableOpacity>
           </View>
@@ -441,15 +456,32 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   footerAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: 16,
     borderTopWidth: 1,
     borderTopColor: '#334155',
+  },
+  deleteBtn: {
+    backgroundColor: '#451A1A',
+    borderColor: '#EF4444',
+    borderWidth: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  deleteBtnText: {
+    color: '#FCA5A5',
+    fontSize: 14,
+    fontWeight: '700',
   },
   doneBtn: {
     backgroundColor: '#10B981',
     paddingVertical: 12,
     borderRadius: 10,
     alignItems: 'center',
+    flex: 1,
   },
   doneBtnText: {
     color: '#FFFFFF',
