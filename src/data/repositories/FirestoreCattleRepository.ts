@@ -5,6 +5,7 @@ import {
   getDoc,
   setDoc,
   updateDoc,
+  deleteDoc,
   query,
   orderBy,
 } from 'firebase/firestore';
@@ -68,6 +69,16 @@ export class FirestoreCattleRepository implements CattleRepository {
       throw err;
     }
     return cattle;
+  }
+
+  async deleteCattle(id: string): Promise<void> {
+    try {
+      const docRef = doc(db, this.collectionName, id);
+      await deleteDoc(docRef);
+    } catch (err) {
+      console.error('Firestore delete error:', err);
+      throw err;
+    }
   }
 
   async getDashboardMetrics(): Promise<DashboardMetrics> {
