@@ -31,20 +31,18 @@ describe('MilkingUseCases', () => {
         date: '2026-08-01',
         session: 'Morning',
         amountKg: 145.5,
-        fatPercentage: 4.2,
         notes: 'Morning yield',
         createdAt: new Date().toISOString(),
       };
 
       mockMilkingRepository.recordBulkMilk.mockResolvedValue(mockRecord);
 
-      const result = await useCase.execute('2026-08-01', 'Morning', 145.48, 4.2, 'Morning yield');
+      const result = await useCase.execute('2026-08-01', 'Morning', 145.48, 'Morning yield');
 
       expect(mockMilkingRepository.recordBulkMilk).toHaveBeenCalledWith({
         date: '2026-08-01',
         session: 'Morning',
         amountKg: 145.5,
-        fatPercentage: 4.2,
         notes: 'Morning yield',
       });
       expect(result).toEqual(mockRecord);
