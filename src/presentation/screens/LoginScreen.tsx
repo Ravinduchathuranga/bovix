@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
@@ -48,10 +49,11 @@ export const LoginScreen: React.FC = () => {
     setErrorMessage('');
     setGoogleLoading(true);
     try {
-      // In production/device builds, expo-auth-session or @react-native-google-signin/google-signin retrieves the idToken.
-      // Here we utilize the Firebase Auth OAuth flow credential handler.
-      const mockIdToken = 'mock_google_id_token_' + Date.now();
-      await loginWithGoogle(mockIdToken);
+      Alert.alert(
+        'Google OAuth Provider',
+        'Google Sign-In requires an active Web Client ID configured in Google Cloud Console & Firebase OAuth settings. Please use Email/Password sign in for demo authentication.',
+        [{ text: 'OK' }]
+      );
     } catch (err: any) {
       setErrorMessage(err.message || 'Google Sign-In failed. Please try again.');
     } finally {
