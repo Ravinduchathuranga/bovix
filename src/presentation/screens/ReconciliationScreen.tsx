@@ -35,7 +35,7 @@ export const ReconciliationScreen: React.FC = () => {
   const [companyName, setCompanyName] = useState('Cargills Dairy Co.');
   const [companyScaleKg, setCompanyScaleKg] = useState('');
   const [pricePerKg, setPricePerKg] = useState('0.85');
-  const [fatPercentage, setFatPercentage] = useState('4.2');
+  const [fatPercentage, setFatPercentage] = useState('');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -84,6 +84,7 @@ export const ReconciliationScreen: React.FC = () => {
       setModalVisible(false);
       setReceiptNumber('');
       setCompanyScaleKg('');
+      setFatPercentage('');
       setNotes('');
       fetchReconciliationData();
       Alert.alert('Receipt Added', `Logged company scale paper slip #${receiptNumber}`);
@@ -235,6 +236,7 @@ export const ReconciliationScreen: React.FC = () => {
                       {hasReceipt ? (
                         <Text style={styles.receiptNo}>
                           Slip #{item.receipt?.receiptNumber} • {item.receipt?.companyName}
+                          {item.receipt?.companyFatPercentage !== undefined ? ` • ${item.receipt.companyFatPercentage}% Fat` : ''}
                         </Text>
                       ) : (
                         <Text style={styles.noReceiptText}>⚠️ Awaiting Company Receipt Slip</Text>
@@ -303,9 +305,15 @@ export const ReconciliationScreen: React.FC = () => {
                             : `🚨 Discrepancy Alert: ${item.differenceKg} KG difference! (${item.variancePercentage}%)`}
                       </Text>
 
+                      {item.receipt?.companyFatPercentage !== undefined ? (
+                        <Text style={styles.payoutText}>
+                          Company Tested Fat: {item.receipt.companyFatPercentage}%
+                        </Text>
+                      ) : null}
+
                       {item.receipt?.totalPayout ? (
                         <Text style={styles.payoutText}>
-                          Est. Payout: ${item.receipt.totalPayout.toFixed(2)}
+                          Company Payout: RS: {item.receipt.totalPayout.toFixed(2)}
                         </Text>
                       ) : null}
                     </View>
@@ -364,6 +372,18 @@ export const ReconciliationScreen: React.FC = () => {
                 keyboardType="numeric"
                 value={companyScaleKg}
                 onChangeText={setCompanyScaleKg}
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Company Tested Fat (%) (Optional)</Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder="e.g. 4.2"
+                placeholderTextColor="#999"
+                keyboardType="numeric"
+                value={fatPercentage}
+                onChangeText={setFatPercentage}
               />
             </View>
 
