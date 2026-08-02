@@ -88,9 +88,7 @@ const RootNavigation: React.FC = () => {
           {renderScreen()}
         </ScreenTransition>
       </View>
-      {currentTab !== 'settings' && currentTab !== 'cattle' && (
-        <BottomTabs activeTab={currentTab} onSelectTab={setCurrentTab} />
-      )}
+      <BottomTabs activeTab={currentTab} onSelectTab={setCurrentTab} />
       <DrawerMenu
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
