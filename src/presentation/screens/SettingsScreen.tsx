@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -9,9 +9,17 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Feather } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../context/AuthContext';
 
-export const SettingsScreen: React.FC = () => {
+interface SettingsScreenProps {
+  onBack?: () => void;
+}
+
+const SETTINGS_KEY = '@bovix_app_settings';
+
+export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
   const { user, logout } = useAuth();
 
   // Settings State
@@ -21,15 +29,70 @@ export const SettingsScreen: React.FC = () => {
   const [darkMode, setDarkMode] = useState(true);
   const [yieldUnit, setYieldUnit] = useState<'Liters' | 'Gallons'>('Liters');
 
-  const handleClearCache = () => {
-    Alert.alert('Cache Cleared', 'Local offline data cache has been refreshed.');
+  useEffect(() => {
+    loadSavedSettings();
+  }, []);
+
+  const loadSavedSettings = async () => {
+    try {
+      const saved = await AsyncStorage.getItem(SETTINGS_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.notificationsEnabled !== undefined) setNotificationsEnabled(parsed.notificationsEnabled);
+        if (parsed.milkingReminders !== undefined) setMilkingReminders(parsed.milkingReminders);
+        if (parsed.healthAlerts !== undefined) setHealthAlerts(parsed.healthAlerts);
+        if (parsed.darkMode !== undefined) setDarkMode(parsed.darkMode);
+        if (parsed.yieldUnit !== undefined) setYieldUnit(parsed.yieldUnit);
+      }
+    } catch (e) {
+      console.warn('Failed to load settings from storage', e);
+    }
+  };
+
+  const persistSettings = async (updates: Partial<{
+    notificationsEnabled: boolean;
+    milkingReminders: boolean;
+    healthAlerts: boolean;
+    darkMode: boolean;
+    yieldUnit: 'Liters' | 'Gallons';
+  }>) => {
+    try {
+      const current = {
+        notificationsEnabled,
+        milkingReminders,
+        healthAlerts,
+        darkMode,
+        yieldUnit,
+        ...updates,
+      };
+      await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(current));
+    } catch (e) {
+      console.warn('Failed to persist settings', e);
+    }
+  };
+
+  const handleClearCache = async () => {
+    try {
+      await AsyncStorage.clear();
+      Alert.alert('Cache Cleared', 'Local offline data cache and settings have been reset.');
+    } catch (e) {
+      Alert.alert('Error', 'Failed to clear cache.');
+    }
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
+        {onBack && (
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={onBack}
+            activeOpacity={0.7}
+          >
+            <Feather name="arrow-left" size={22} color="#10B981" />
+          </TouchableOpacity>
+        )}
         <Text style={styles.headerTitle}>Settings</Text>
-        <Text style={styles.headerSubtitle}>App Preferences & Account</Text>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -59,7 +122,10 @@ export const SettingsScreen: React.FC = () => {
             </View>
             <Switch
               value={notificationsEnabled}
-              onValueChange={setNotificationsEnabled}
+              onValueChange={(val) => {
+                setNotificationsEnabled(val);
+                persistSettings({ notificationsEnabled: val });
+              }}
               trackColor={{ false: '#334155', true: '#059669' }}
               thumbColor={notificationsEnabled ? '#10B981' : '#94A3B8'}
             />
@@ -72,7 +138,10 @@ export const SettingsScreen: React.FC = () => {
             </View>
             <Switch
               value={milkingReminders}
-              onValueChange={setMilkingReminders}
+              onValueChange={(val) => {
+                setMilkingReminders(val);
+                persistSettings({ milkingReminders: val });
+              }}
               trackColor={{ false: '#334155', true: '#059669' }}
               thumbColor={milkingReminders ? '#10B981' : '#94A3B8'}
             />
@@ -85,7 +154,10 @@ export const SettingsScreen: React.FC = () => {
             </View>
             <Switch
               value={healthAlerts}
-              onValueChange={setHealthAlerts}
+              onValueChange={(val) => {
+                setHealthAlerts(val);
+                persistSettings({ healthAlerts: val });
+              }}
               trackColor={{ false: '#334155', true: '#059669' }}
               thumbColor={healthAlerts ? '#10B981' : '#94A3B8'}
             />
@@ -103,7 +175,10 @@ export const SettingsScreen: React.FC = () => {
             </View>
             <Switch
               value={darkMode}
-              onValueChange={setDarkMode}
+              onValueChange={(val) => {
+                setDarkMode(val);
+                persistSettings({ darkMode: val });
+              }}
               trackColor={{ false: '#334155', true: '#059669' }}
               thumbColor={darkMode ? '#10B981' : '#94A3B8'}
             />
@@ -116,7 +191,11 @@ export const SettingsScreen: React.FC = () => {
             </View>
             <TouchableOpacity
               style={styles.unitToggleBtn}
-              onPress={() => setYieldUnit(yieldUnit === 'Liters' ? 'Gallons' : 'Liters')}
+              onPress={() => {
+                const nextUnit = yieldUnit === 'Liters' ? 'Gallons' : 'Liters';
+                setYieldUnit(nextUnit);
+                persistSettings({ yieldUnit: nextUnit });
+              }}
             >
               <Text style={styles.unitToggleText}>{yieldUnit}</Text>
             </TouchableOpacity>
@@ -153,10 +232,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#0F172A',
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#1E293B',
+  },
+  backButton: {
+    marginRight: 14,
+    padding: 4,
   },
   headerTitle: {
     fontSize: 22,
