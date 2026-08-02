@@ -8,29 +8,110 @@ import {
   ActivityIndicator,
   Image,
   Alert,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, FontAwesome } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { getDashboardDataUseCase, deleteCattleUseCase } from '../../di/container';
 import { Cattle, DashboardMetrics } from '../../domain/entities/cattle';
-import { CattleDetailsModal } from '../components/CattleDetailsModal';
+import { CattleProfileScreen } from './CattleProfileScreen';
+import { UserProfileModal } from '../components/UserProfileModal';
+import { TabType } from '../components/BottomTabs';
 
+interface FarmServiceShortcut {
+  id: string;
+  title: string;
+  category: string;
+  icon: string;
+  keywords: string[];
+  action: () => void;
+}
 
 interface DashboardScreenProps {
   onNavigateToAddCattle?: () => void;
+  onNavigateToSettings?: () => void;
+  onSelectTab?: (tab: TabType) => void;
   onOpenDrawer?: () => void;
 }
 
 export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   onNavigateToAddCattle,
+  onNavigateToSettings,
+  onSelectTab,
   onOpenDrawer,
 }) => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [recentCattle, setRecentCattle] = useState<Cattle[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCow, setSelectedCow] = useState<Cattle | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+
+  const servicesList: FarmServiceShortcut[] = [
+    {
+      id: 'add-cattle',
+      title: 'Register New Cattle',
+      category: 'Cattle Management',
+      icon: '🐄',
+      keywords: ['add', 'cow', 'cattle', 'register', 'create', 'new', 'livestock', 'bull', 'heifer'],
+      action: () => onNavigateToAddCattle?.(),
+    },
+    {
+      id: 'daily-milking',
+      title: 'Daily Milking Records',
+      category: 'Production Logs',
+      icon: '🥛',
+      keywords: ['milk', 'milking', 'yield', 'liters', 'log', 'daily', 'production', 'record'],
+      action: () => onSelectTab?.('milking'),
+    },
+    {
+      id: 'app-settings',
+      title: 'Farm & App Settings',
+      category: 'Preferences',
+      icon: '⚙️',
+      keywords: ['setting', 'settings', 'preference', 'unit', 'dark', 'theme', 'account', 'config'],
+      action: () => onNavigateToSettings?.(),
+    },
+    {
+      id: 'attention-cattle',
+      title: 'Sick & Attention Cattle',
+      category: 'Health Alert',
+      icon: '🩺',
+      keywords: ['health', 'sick', 'attention', 'alert', 'medical', 'vet', 'doctor', 'disease'],
+      action: () => setSearchQuery('sick'),
+    },
+    {
+      id: 'lactating-cattle',
+      title: 'Active Lactating Cows',
+      category: 'Yield Group',
+      icon: '⚡',
+      keywords: ['lactating', 'lactation', 'active', 'milking cows'],
+      action: () => setSearchQuery('lactating'),
+    },
+    {
+      id: 'log-out',
+      title: 'Sign Out / Logout',
+      category: 'Account Action',
+      icon: '🚪',
+      keywords: ['logout', 'sign out', 'exit', 'log out'],
+      action: () => logout(),
+    },
+  ];
+
+  const matchingServices = servicesList.filter((svc) => {
+    if (!searchQuery.trim()) return false;
+    const q = searchQuery.toLowerCase();
+    return (
+      svc.title.toLowerCase().includes(q) ||
+      svc.category.toLowerCase().includes(q) ||
+      svc.keywords.some((kw) => kw.includes(q))
+    );
+  });
 
   const loadData = async () => {
     setLoading(true);
@@ -48,6 +129,17 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   useEffect(() => {
     loadData();
   }, []);
+
+  const filteredCattle = recentCattle.filter((cow) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      cow.name.toLowerCase().includes(q) ||
+      cow.tagNumber.toLowerCase().includes(q) ||
+      cow.breed.toLowerCase().includes(q) ||
+      cow.status.toLowerCase().includes(q)
+    );
+  });
 
   const getStatusBadge = (status: Cattle['status']) => {
     switch (status) {
@@ -88,15 +180,76 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     );
   };
 
+  if (selectedCow) {
+    return (
+      <CattleProfileScreen
+        cow={selectedCow}
+        onBack={() => setSelectedCow(null)}
+        onDelete={(id, name) => {
+          setSelectedCow(null);
+          handleDeleteCattle(id, name);
+        }}
+      />
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
-      {/* Top App Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={onOpenDrawer} activeOpacity={0.7} style={{ padding: 4 }}>
-          <Feather name="menu" size={24} color="white" />
-        </TouchableOpacity>
-        <View>
-          <Text style={styles.farmName}>{user?.farmName || 'Bovix Farm'}</Text>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        {/* Gmail-Style Floating Search Header */}
+        <View style={styles.searchHeaderWrapper}>
+          <View style={styles.searchHeaderBar}>
+          <TouchableOpacity
+            onPress={onOpenDrawer}
+            activeOpacity={0.7}
+            style={styles.menuIconBtn}
+          >
+            <Feather name="menu" size={22} color="#CBD5E1" />
+          </TouchableOpacity>
+
+          <View
+            style={[
+              styles.searchInputContainer,
+              isSearchFocused && styles.searchInputContainerFocused,
+            ]}
+          >
+            <Feather
+              name="search"
+              size={18}
+              color={isSearchFocused ? '#10B981' : '#94A3B8'}
+              style={styles.searchIcon}
+            />
+            <TextInput
+              style={styles.searchInput}
+              placeholder={`Search "${user?.farmName || 'Bovix Farm'}" cattle...`}
+              placeholderTextColor="#64748B"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              onFocus={() => setIsSearchFocused(true)}
+              onBlur={() => setIsSearchFocused(false)}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity
+                onPress={() => setSearchQuery('')}
+                style={styles.clearSearchBtn}
+              >
+                <Feather name="x" size={16} color="#94A3B8" />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <TouchableOpacity
+            onPress={() => setShowProfileModal(true)}
+            activeOpacity={0.8}
+            style={styles.profileAvatarBtn}
+          >
+            <Text style={styles.profileAvatarText}>
+              {user?.name ? user.name.charAt(0).toUpperCase() : 'B'}
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -137,9 +290,35 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             </View>
           </View>
 
+          {/* Matching Services Section */}
+          {searchQuery.trim().length > 0 && matchingServices.length > 0 && (
+            <View style={styles.servicesSection}>
+              <Text style={styles.servicesSectionHeader}>
+                Services & Features ({matchingServices.length})
+              </Text>
+              {matchingServices.map((svc) => (
+                <TouchableOpacity
+                  key={svc.id}
+                  style={styles.serviceResultCard}
+                  onPress={svc.action}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.serviceIcon}>{svc.icon}</Text>
+                  <View style={styles.serviceTextContainer}>
+                    <Text style={styles.serviceTitle}>{svc.title}</Text>
+                    <Text style={styles.serviceCategory}>{svc.category}</Text>
+                  </View>
+                  <Feather name="arrow-up-right" size={18} color="#10B981" />
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+
           {/* Action Bar */}
           <View style={styles.actionHeader}>
-            <Text style={styles.sectionTitle}>Recent Cattle</Text>
+            <Text style={styles.sectionTitle}>
+              {searchQuery.trim() ? 'Matching Cattle Records' : 'Recent Cattle'}
+            </Text>
             <TouchableOpacity
               style={styles.addBtn}
               onPress={onNavigateToAddCattle}
@@ -165,8 +344,16 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 <Text style={styles.bannerActionBtnText}>+ Add New Cattle</Text>
               </TouchableOpacity>
             </View>
+          ) : filteredCattle.length === 0 ? (
+            <View style={styles.emptyBanner}>
+              <Text style={styles.emptyBannerIcon}>🔍</Text>
+              <Text style={styles.emptyBannerTitle}>No Matching Cattle</Text>
+              <Text style={styles.emptyBannerSubtitle}>
+                No cattle records match "{searchQuery}". Try searching by tag number, name, or breed.
+              </Text>
+            </View>
           ) : (
-            recentCattle.map((cow) => {
+            filteredCattle.map((cow) => {
               const badge = getStatusBadge(cow.status);
               return (
                 <TouchableOpacity
@@ -214,13 +401,13 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         </ScrollView>
       )}
 
-      {/* Cattle Details Modal */}
-      <CattleDetailsModal
-        visible={!!selectedCow}
-        cow={selectedCow}
-        onClose={() => setSelectedCow(null)}
-        onDelete={handleDeleteCattle}
+      {/* User Profile Modal */}
+      <UserProfileModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        onOpenSettings={onNavigateToSettings}
       />
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
@@ -230,23 +417,113 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0F172A',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+  searchHeaderWrapper: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#1E293B',
   },
-  greeting: {
-    fontSize: 20,
+  searchHeaderBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  menuIconBtn: {
+    padding: 6,
+  },
+  searchInputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1E293B',
+    borderRadius: 24,
+    paddingHorizontal: 12,
+    borderWidth: 1.5,
+    borderColor: '#334155',
+    marginHorizontal: 8,
+  },
+  searchInputContainerFocused: {
+    borderColor: '#10B981',
+    backgroundColor: '#0F172A',
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    color: '#F8FAFC',
+    fontSize: 14,
+    paddingVertical: 6,
+    height: 38,
+  },
+  clearSearchBtn: {
+    padding: 6,
+  },
+  profileAvatarBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#10B981',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
+  profileAvatarText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  servicesSection: {
+    marginBottom: 20,
+    backgroundColor: '#1E293B',
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  servicesSectionHeader: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#10B981',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 10,
+  },
+  serviceResultCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0F172A',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  serviceIcon: {
+    fontSize: 22,
+    marginRight: 12,
+  },
+  serviceTextContainer: {
+    flex: 1,
+  },
+  serviceTitle: {
+    fontSize: 14,
     fontWeight: '700',
     color: '#F8FAFC',
   },
-  farmName: {
-    fontSize: 13,
-    color: '#10B981',
+  serviceCategory: {
+    fontSize: 12,
+    color: '#94A3B8',
     marginTop: 2,
   },
   loadingContainer: {
