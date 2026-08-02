@@ -10,6 +10,7 @@ import { DailyMilkingScreen } from './src/presentation/screens/DailyMilkingScree
 import { SettingsScreen } from './src/presentation/screens/SettingsScreen';
 import { BottomTabs, TabType } from './src/presentation/components/BottomTabs';
 import { DrawerMenu } from './src/presentation/components/DrawerMenu';
+import { ScreenTransition } from './src/presentation/components/ScreenTransition';
 
 const RootNavigation: React.FC = () => {
   const { user, isLoading } = useAuth();
@@ -32,13 +33,15 @@ const RootNavigation: React.FC = () => {
   // Show full-screen Add Cattle form (stacked over tabs)
   if (showAddCattle) {
     return (
-      <AddCattleScreen
-        onCattleAdded={() => {
-          setShowAddCattle(false);
-          setCurrentTab('dashboard');
-        }}
-        onCancel={() => setShowAddCattle(false)}
-      />
+      <ScreenTransition screenKey="add-cattle">
+        <AddCattleScreen
+          onCattleAdded={() => {
+            setShowAddCattle(false);
+            setCurrentTab('dashboard');
+          }}
+          onCancel={() => setShowAddCattle(false)}
+        />
+      </ScreenTransition>
     );
   }
 
@@ -54,7 +57,7 @@ const RootNavigation: React.FC = () => {
       case 'milking':
         return <DailyMilkingScreen />;
       case 'settings':
-        return <SettingsScreen />;
+        return <SettingsScreen onBack={() => setCurrentTab('dashboard')} />;
       default:
         return (
           <DashboardScreen
@@ -67,8 +70,14 @@ const RootNavigation: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.screenContainer}>{renderScreen()}</View>
-      <BottomTabs activeTab={currentTab} onSelectTab={setCurrentTab} />
+      <View style={styles.screenContainer}>
+        <ScreenTransition screenKey={currentTab}>
+          {renderScreen()}
+        </ScreenTransition>
+      </View>
+      {currentTab !== 'settings' && (
+        <BottomTabs activeTab={currentTab} onSelectTab={setCurrentTab} />
+      )}
       <DrawerMenu
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
