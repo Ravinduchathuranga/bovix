@@ -12,6 +12,7 @@ describe('AddCattleUseCase', () => {
       getCattleById: jest.fn(),
       addCattle: jest.fn(),
       updateCattle: jest.fn(),
+      deleteCattle: jest.fn(),
       getDashboardMetrics: jest.fn(),
     };
     useCase = new AddCattleUseCase(mockCattleRepository);
