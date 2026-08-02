@@ -19,9 +19,20 @@ export const BottomTabs: React.FC<BottomTabsProps> = ({ activeTab, onSelectTab }
           onPress={() => onSelectTab('dashboard')}
           activeOpacity={0.7}
         >
-          <Feather name="home" size={22} color={activeTab === 'dashboard' ? '#10B981' : '#94A3B8'} />
+          <Feather name="home" size={20} color={activeTab === 'dashboard' ? '#10B981' : '#94A3B8'} />
           <Text style={[styles.tabLabel, activeTab === 'dashboard' && styles.activeTabLabel]}>
             Dashboard
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.tabButton, activeTab === 'cattle' && styles.activeTabButton]}
+          onPress={() => onSelectTab('cattle')}
+          activeOpacity={0.7}
+        >
+          <Feather name="grid" size={20} color={activeTab === 'cattle' ? '#10B981' : '#94A3B8'} />
+          <Text style={[styles.tabLabel, activeTab === 'cattle' && styles.activeTabLabel]}>
+            Herd
           </Text>
         </TouchableOpacity>
 
@@ -30,9 +41,20 @@ export const BottomTabs: React.FC<BottomTabsProps> = ({ activeTab, onSelectTab }
           onPress={() => onSelectTab('milking')}
           activeOpacity={0.7}
         >
-          <Feather name="file-text" size={22} color={activeTab === 'milking' ? '#10B981' : '#94A3B8'} />
+          <Feather name="file-text" size={20} color={activeTab === 'milking' ? '#10B981' : '#94A3B8'} />
           <Text style={[styles.tabLabel, activeTab === 'milking' && styles.activeTabLabel]}>
-            Daily Logs
+            Production
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.tabButton, activeTab === 'settings' && styles.activeTabButton]}
+          onPress={() => onSelectTab('settings')}
+          activeOpacity={0.7}
+        >
+          <Feather name="settings" size={20} color={activeTab === 'settings' ? '#10B981' : '#94A3B8'} />
+          <Text style={[styles.tabLabel, activeTab === 'settings' && styles.activeTabLabel]}>
+            Settings
           </Text>
         </TouchableOpacity>
       </View>
@@ -48,7 +70,7 @@ const styles = StyleSheet.create({
   },
   tabBar: {
     flexDirection: 'row',
-    height: 60,
+    height: 56,
     backgroundColor: '#1E293B',
     justifyContent: 'space-around',
     alignItems: 'center',
@@ -57,14 +79,14 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
+    paddingVertical: 6,
   },
   activeTabButton: {
     borderTopWidth: 2,
     borderTopColor: '#10B981',
   },
   tabLabel: {
-    fontSize: 11,
+    fontSize: 10,
     color: '#94A3B8',
     fontWeight: '600',
     marginTop: 2,
