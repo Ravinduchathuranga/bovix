@@ -9,9 +9,14 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Feather } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 
-export const SettingsScreen: React.FC = () => {
+interface SettingsScreenProps {
+  onBack?: () => void;
+}
+
+export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
   const { user, logout } = useAuth();
 
   // Settings State
@@ -28,8 +33,16 @@ export const SettingsScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
+        {onBack && (
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={onBack}
+            activeOpacity={0.7}
+          >
+            <Feather name="arrow-left" size={22} color="#10B981" />
+          </TouchableOpacity>
+        )}
         <Text style={styles.headerTitle}>Settings</Text>
-        <Text style={styles.headerSubtitle}>App Preferences & Account</Text>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -153,10 +166,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#0F172A',
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#1E293B',
+  },
+  backButton: {
+    marginRight: 14,
+    padding: 4,
   },
   headerTitle: {
     fontSize: 22,
