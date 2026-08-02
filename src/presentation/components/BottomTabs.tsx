@@ -1,9 +1,8 @@
-import { Feather } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-export type TabType = 'dashboard' | 'cattle' | 'milking' | 'settings';
+export type TabType = 'production' | 'stock';
 
 interface BottomTabsProps {
   activeTab: TabType;
@@ -15,46 +14,24 @@ export const BottomTabs: React.FC<BottomTabsProps> = ({ activeTab, onSelectTab }
     <SafeAreaView edges={['bottom']} style={styles.safeArea}>
       <View style={styles.tabBar}>
         <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'dashboard' && styles.activeTabButton]}
-          onPress={() => onSelectTab('dashboard')}
+          style={[styles.tabButton, activeTab === 'production' && styles.activeTabButton]}
+          onPress={() => onSelectTab('production')}
           activeOpacity={0.7}
         >
-          <Feather name="home" size={20} color={activeTab === 'dashboard' ? '#10B981' : '#94A3B8'} />
-          <Text style={[styles.tabLabel, activeTab === 'dashboard' && styles.activeTabLabel]}>
-            Dashboard
+          <Text style={styles.tabIcon}>🐄</Text>
+          <Text style={[styles.tabLabel, activeTab === 'production' && styles.activeTabLabel]}>
+            Cattle & Production
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'cattle' && styles.activeTabButton]}
-          onPress={() => onSelectTab('cattle')}
+          style={[styles.tabButton, activeTab === 'stock' && styles.activeTabButton]}
+          onPress={() => onSelectTab('stock')}
           activeOpacity={0.7}
         >
-          <Feather name="grid" size={20} color={activeTab === 'cattle' ? '#10B981' : '#94A3B8'} />
-          <Text style={[styles.tabLabel, activeTab === 'cattle' && styles.activeTabLabel]}>
-            Herd
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'milking' && styles.activeTabButton]}
-          onPress={() => onSelectTab('milking')}
-          activeOpacity={0.7}
-        >
-          <Feather name="file-text" size={20} color={activeTab === 'milking' ? '#10B981' : '#94A3B8'} />
-          <Text style={[styles.tabLabel, activeTab === 'milking' && styles.activeTabLabel]}>
-            Production
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'settings' && styles.activeTabButton]}
-          onPress={() => onSelectTab('settings')}
-          activeOpacity={0.7}
-        >
-          <Feather name="settings" size={20} color={activeTab === 'settings' ? '#10B981' : '#94A3B8'} />
-          <Text style={[styles.tabLabel, activeTab === 'settings' && styles.activeTabLabel]}>
-            Settings
+          <Text style={styles.tabIcon}>🌾</Text>
+          <Text style={[styles.tabLabel, activeTab === 'stock' && styles.activeTabLabel]}>
+            Farm Stock
           </Text>
         </TouchableOpacity>
       </View>
@@ -64,35 +41,41 @@ export const BottomTabs: React.FC<BottomTabsProps> = ({ activeTab, onSelectTab }
 
 const styles = StyleSheet.create({
   safeArea: {
-    backgroundColor: '#1E293B',
-    borderTopWidth: 1,
-    borderTopColor: '#334155',
+    backgroundColor: '#0F172A',
   },
   tabBar: {
     flexDirection: 'row',
-    height: 56,
+    height: 64,
     backgroundColor: '#1E293B',
-    justifyContent: 'space-around',
+    borderTopWidth: 1,
+    borderTopColor: '#334155',
+    paddingHorizontal: 20,
     alignItems: 'center',
+    justifyContent: 'space-around',
   },
   tabButton: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 6,
+    borderRadius: 12,
+    marginHorizontal: 8,
   },
   activeTabButton: {
-    borderTopWidth: 2,
-    borderTopColor: '#10B981',
+    backgroundColor: '#0F172A',
+    borderWidth: 1,
+    borderColor: '#10B981',
+  },
+  tabIcon: {
+    fontSize: 20,
+    marginBottom: 2,
   },
   tabLabel: {
-    fontSize: 10,
-    color: '#94A3B8',
-    fontWeight: '600',
-    marginTop: 2,
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#64748B',
   },
   activeTabLabel: {
-    color: '#10B981',
-    fontWeight: '700',
+    color: '#34D399',
   },
 });
