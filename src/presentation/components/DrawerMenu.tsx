@@ -31,6 +31,7 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({
   onClose,
   activeTab,
   onSelectTab,
+  onNavigateToAddCattle,
 }) => {
   const { user, logout } = useAuth();
 
@@ -213,6 +214,52 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({
               <TouchableOpacity
                 style={[
                   styles.menuItem,
+                  activeTab === 'cattle' && styles.menuItemActive,
+                ]}
+                onPress={() => handleNav(() => onSelectTab('cattle'))}
+                activeOpacity={0.7}
+              >
+                <Feather
+                  name="grid"
+                  size={20}
+                  color={activeTab === 'cattle' ? '#10B981' : '#94A3B8'}
+                />
+                <Text
+                  style={[
+                    styles.menuText,
+                    activeTab === 'cattle' && styles.menuTextActive,
+                  ]}
+                >
+                  Cattle Management
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.menuItem,
+                  activeTab === 'milking' && styles.menuItemActive,
+                ]}
+                onPress={() => handleNav(() => onSelectTab('milking'))}
+                activeOpacity={0.7}
+              >
+                <Feather
+                  name="file-text"
+                  size={20}
+                  color={activeTab === 'milking' ? '#10B981' : '#94A3B8'}
+                />
+                <Text
+                  style={[
+                    styles.menuText,
+                    activeTab === 'milking' && styles.menuTextActive,
+                  ]}
+                >
+                  Daily Production
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.menuItem,
                   activeTab === 'settings' && styles.menuItemActive,
                 ]}
                 onPress={() => handleNav(() => onSelectTab('settings'))}
@@ -367,6 +414,22 @@ const styles = StyleSheet.create({
   menuTextActive: {
     color: '#10B981',
     fontWeight: '700',
+  },
+  addCattleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#10B981',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    marginTop: 16,
+    gap: 8,
+  },
+  addCattleBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 14,
   },
   footer: {
     paddingHorizontal: 16,
