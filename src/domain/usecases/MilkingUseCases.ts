@@ -4,7 +4,7 @@ import { BulkMilkRecord } from '../entities/cattle';
 export class RecordBulkMilkUseCase {
   constructor(private milkingRepository: MilkingRepository) {}
 
-  async execute(date: string, session: 'Morning' | 'Evening', amountKg: number, fatPercentage?: number, notes?: string): Promise<BulkMilkRecord> {
+  async execute(date: string, session: 'Morning' | 'Evening', amountKg: number, notes?: string): Promise<BulkMilkRecord> {
     if (!date) {
       throw new Error('Please select a valid date.');
     }
@@ -15,7 +15,6 @@ export class RecordBulkMilkUseCase {
       date,
       session,
       amountKg: Math.round(amountKg * 10) / 10,
-      fatPercentage,
       notes,
     });
   }
