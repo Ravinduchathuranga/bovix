@@ -7,7 +7,6 @@ import { LoginScreen } from './src/presentation/screens/LoginScreen';
 import { DashboardScreen } from './src/presentation/screens/DashboardScreen';
 import { AddCattleScreen } from './src/presentation/screens/AddCattleScreen';
 import { DailyMilkingScreen } from './src/presentation/screens/DailyMilkingScreen';
-import { ReconciliationScreen } from './src/presentation/screens/ReconciliationScreen';
 import { SettingsScreen } from './src/presentation/screens/SettingsScreen';
 import { BottomTabs, TabType } from './src/presentation/components/BottomTabs';
 
@@ -49,8 +48,6 @@ const RootNavigation: React.FC = () => {
         );
       case 'milking':
         return <DailyMilkingScreen />;
-      case 'reconciliation':
-        return <ReconciliationScreen />;
       case 'settings':
         return <SettingsScreen />;
       default:
