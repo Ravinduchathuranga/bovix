@@ -10,6 +10,8 @@ import {
   Alert,
   Image,
   Modal,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
@@ -190,7 +192,11 @@ export const AddCattleScreen: React.FC<AddCattleScreenProps> = ({ onCattleAdded,
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={onCancel} style={styles.backBtn}>
           <Text style={styles.backBtnText}>← Back</Text>
@@ -525,6 +531,7 @@ export const AddCattleScreen: React.FC<AddCattleScreenProps> = ({ onCattleAdded,
           </View>
         </View>
       </Modal>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
