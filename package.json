@@ -6,10 +6,10 @@
     "@expo/vector-icons": "^15.1.1",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/datetimepicker": "9.1.0",
-    "@react-native-vector-icons/fontawesome": "^13.1.2",
     "expo": "~57.0.9",
     "expo-auth-session": "^57.0.5",
     "expo-crypto": "^57.0.1",
+    "expo-font": "~57.0.0",
     "expo-image-picker": "~57.0.7",
     "expo-status-bar": "~57.0.1",
     "expo-updates": "^57.0.11",
@@ -28,7 +28,14 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "test": "jest"
+    "test": "jest",
+    "db:backup": "cd scripts && npx ts-node backup-firestore.ts",
+    "db:backup:json": "cd scripts && npx ts-node backup-to-json.ts",
+    "db:restore": "cd scripts && npx ts-node restore-firestore.ts",
+    "db:seed-test": "cd scripts && FIRESTORE_TARGET=test npx ts-node restore-firestore.ts",
+    "db:deploy-rules:prod": "npx firebase deploy --only firestore:rules --config firebase.json --project bovix-prod",
+    "db:deploy-rules:test": "npx firebase deploy --only firestore:rules --config firebase.test.json --project bovix-test",
+    "db:deploy-rules:backup": "npx firebase deploy --only firestore:rules --config firebase.backup.json --project bovix-backup"
   },
   "private": true,
   "devDependencies": {
