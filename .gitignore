@@ -35,6 +35,15 @@ yarn-error.*
 .env*.local
 .env.production
 .env.development
+.env.backup
+.env.test
+
+# Database backups (JSON snapshots)
+backups/*.json
+
+# Firebase Admin SDK service account keys
+scripts/bovix-backup-firebase-adminsdk-fbsvc-d403e75c31.json
+scripts/bovix-prod-firebase-adminsdk-fbsvc-a209d71f9a.json
 
 # typescript
 *.tsbuildinfo
