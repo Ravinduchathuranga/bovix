@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { TabType } from './BottomTabs';
+import { ProductionSubTab } from '../screens/CattleProductionScreen';
 
 const { width } = Dimensions.get('window');
 const DRAWER_WIDTH = Math.min(width * 0.78, 320);
@@ -22,16 +23,20 @@ interface DrawerMenuProps {
   isOpen: boolean;
   onClose: () => void;
   activeTab?: TabType;
+  subSegment?: ProductionSubTab;
   onSelectTab: (tab: TabType) => void;
-  onNavigateToAddCattle?: () => void;
+  onSelectSubSegment?: (sub: ProductionSubTab) => void;
+  onNavigateToSettings?: () => void;
 }
 
 export const DrawerMenu: React.FC<DrawerMenuProps> = ({
   isOpen,
   onClose,
   activeTab,
+  subSegment = 'dashboard',
   onSelectTab,
-  onNavigateToAddCattle,
+  onSelectSubSegment,
+  onNavigateToSettings,
 }) => {
   const { user, logout } = useAuth();
 
@@ -114,7 +119,6 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({
     setTimeout(action, 150);
   };
 
-  // Interpolated slide transforms for staggered elements
   const headerTranslateX = headerAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [-24, 0],
@@ -146,7 +150,7 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({
           ]}
         >
           <SafeAreaView style={styles.safeArea}>
-            {/* Header / Profile section (Staggered) */}
+            {/* Header / Profile section */}
             <Animated.View
               style={[
                 styles.profileHeader,
@@ -176,7 +180,7 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({
 
             <View style={styles.divider} />
 
-            {/* Menu Items (Staggered) */}
+            {/* Menu Items */}
             <Animated.View
               style={[
                 styles.menuList,
@@ -186,102 +190,109 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({
                 },
               ]}
             >
-              <Text style={styles.sectionHeader}>NAVIGATION</Text>
+              <Text style={styles.sectionHeader}>FARM NAVIGATION</Text>
 
+              {/* 1. Dashboard */}
               <TouchableOpacity
                 style={[
                   styles.menuItem,
-                  activeTab === 'dashboard' && styles.menuItemActive,
+                  activeTab === 'production' && subSegment === 'dashboard' && styles.menuItemActive,
                 ]}
-                onPress={() => handleNav(() => onSelectTab('dashboard'))}
+                onPress={() =>
+                  handleNav(() => {
+                    onSelectTab('production');
+                    onSelectSubSegment?.('dashboard');
+                  })
+                }
                 activeOpacity={0.7}
               >
                 <Feather
                   name="home"
                   size={20}
-                  color={activeTab === 'dashboard' ? '#10B981' : '#94A3B8'}
+                  color={activeTab === 'production' && subSegment === 'dashboard' ? '#10B981' : '#94A3B8'}
                 />
                 <Text
                   style={[
                     styles.menuText,
-                    activeTab === 'dashboard' && styles.menuTextActive,
+                    activeTab === 'production' && subSegment === 'dashboard' && styles.menuTextActive,
                   ]}
                 >
                   Dashboard
                 </Text>
               </TouchableOpacity>
 
+              {/* 2. Cattle & Herd Roster */}
               <TouchableOpacity
                 style={[
                   styles.menuItem,
-                  activeTab === 'cattle' && styles.menuItemActive,
+                  activeTab === 'production' && subSegment === 'cattle' && styles.menuItemActive,
                 ]}
-                onPress={() => handleNav(() => onSelectTab('cattle'))}
+                onPress={() =>
+                  handleNav(() => {
+                    onSelectTab('production');
+                    onSelectSubSegment?.('cattle');
+                  })
+                }
                 activeOpacity={0.7}
               >
                 <Feather
                   name="grid"
                   size={20}
-                  color={activeTab === 'cattle' ? '#10B981' : '#94A3B8'}
+                  color={activeTab === 'production' && subSegment === 'cattle' ? '#10B981' : '#94A3B8'}
                 />
                 <Text
                   style={[
                     styles.menuText,
-                    activeTab === 'cattle' && styles.menuTextActive,
+                    activeTab === 'production' && subSegment === 'cattle' && styles.menuTextActive,
                   ]}
                 >
-                  Cattle Management
+                  Cattle & Herd Roster
                 </Text>
               </TouchableOpacity>
 
+              {/* 3. Daily Yields */}
               <TouchableOpacity
                 style={[
                   styles.menuItem,
-                  activeTab === 'milking' && styles.menuItemActive,
+                  activeTab === 'production' && subSegment === 'milking' && styles.menuItemActive,
                 ]}
-                onPress={() => handleNav(() => onSelectTab('milking'))}
+                onPress={() =>
+                  handleNav(() => {
+                    onSelectTab('production');
+                    onSelectSubSegment?.('milking');
+                  })
+                }
                 activeOpacity={0.7}
               >
                 <Feather
                   name="file-text"
                   size={20}
-                  color={activeTab === 'milking' ? '#10B981' : '#94A3B8'}
+                  color={activeTab === 'production' && subSegment === 'milking' ? '#10B981' : '#94A3B8'}
                 />
                 <Text
                   style={[
                     styles.menuText,
-                    activeTab === 'milking' && styles.menuTextActive,
+                    activeTab === 'production' && subSegment === 'milking' && styles.menuTextActive,
                   ]}
                 >
-                  Daily Production
+                  Daily Yields
                 </Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[
-                  styles.menuItem,
-                  activeTab === 'settings' && styles.menuItemActive,
-                ]}
-                onPress={() => handleNav(() => onSelectTab('settings'))}
-                activeOpacity={0.7}
-              >
-                <Feather
-                  name="settings"
-                  size={20}
-                  color={activeTab === 'settings' ? '#10B981' : '#94A3B8'}
-                />
-                <Text
-                  style={[
-                    styles.menuText,
-                    activeTab === 'settings' && styles.menuTextActive,
-                  ]}
+              {/* 4. Settings */}
+              {onNavigateToSettings && (
+                <TouchableOpacity
+                  style={styles.menuItem}
+                  onPress={() => handleNav(onNavigateToSettings)}
+                  activeOpacity={0.7}
                 >
-                  Settings
-                </Text>
-              </TouchableOpacity>
+                  <Feather name="settings" size={20} color="#94A3B8" />
+                  <Text style={styles.menuText}>Settings</Text>
+                </TouchableOpacity>
+              )}
             </Animated.View>
 
-            {/* Footer / Logout (Staggered) */}
+            {/* Footer / Logout */}
             <Animated.View
               style={[
                 styles.footer,
@@ -414,22 +425,6 @@ const styles = StyleSheet.create({
   menuTextActive: {
     color: '#10B981',
     fontWeight: '700',
-  },
-  addCattleBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#10B981',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    marginTop: 16,
-    gap: 8,
-  },
-  addCattleBtnText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 14,
   },
   footer: {
     paddingHorizontal: 16,

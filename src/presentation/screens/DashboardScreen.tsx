@@ -67,7 +67,15 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       category: 'Production Logs',
       icon: '🥛',
       keywords: ['milk', 'milking', 'yield', 'liters', 'log', 'daily', 'production', 'record'],
-      action: () => onSelectTab?.('milking'),
+      action: () => onSelectTab?.('production'),
+    },
+    {
+      id: 'farm-stock',
+      title: 'Farm Stock & Feeds',
+      category: 'Feed Inventory',
+      icon: '🌾',
+      keywords: ['stock', 'feed', 'silage', 'hay', 'inventory', 'consumption', 'bags'],
+      action: () => onSelectTab?.('stock'),
     },
     {
       id: 'app-settings',

@@ -2,6 +2,8 @@ import { FirebaseAuthRepository } from '../data/repositories/FirebaseAuthReposit
 import { FirestoreCattleRepository } from '../data/repositories/FirestoreCattleRepository';
 import { FirestoreMilkingRepository } from '../data/repositories/FirestoreMilkingRepository';
 import { FirestoreReceiptRepository } from '../data/repositories/FirestoreReceiptRepository';
+import { FirestoreStockRepository } from '../data/repositories/FirestoreStockRepository';
+
 import { LoginUseCase } from '../domain/usecases/LoginUseCase';
 import { GoogleLoginUseCase, SignUpUseCase } from '../domain/usecases/AuthUseCases';
 import { GetDashboardDataUseCase } from '../domain/usecases/GetDashboardDataUseCase';
@@ -18,12 +20,21 @@ import {
   GetReconciliationUseCase,
   DeleteReceiptUseCase,
 } from '../domain/usecases/ReceiptUseCases';
+import {
+  GetStockItemsUseCase,
+  AddStockItemUseCase,
+  RefillStockUseCase,
+  DeleteStockItemUseCase,
+  RecordFeedUsageUseCase,
+  GetFeedUsageHistoryUseCase,
+} from '../domain/usecases/StockUseCases';
 
 // Singletons / Repositories
 const authRepository = new FirebaseAuthRepository();
 const cattleRepository = new FirestoreCattleRepository();
 const milkingRepository = new FirestoreMilkingRepository();
 const receiptRepository = new FirestoreReceiptRepository(milkingRepository);
+const stockRepository = new FirestoreStockRepository();
 
 export const loginUseCase = new LoginUseCase(authRepository);
 export const googleLoginUseCase = new GoogleLoginUseCase(authRepository);
@@ -42,4 +53,11 @@ export const addCompanyReceiptUseCase = new AddCompanyReceiptUseCase(receiptRepo
 export const getReconciliationUseCase = new GetReconciliationUseCase(receiptRepository);
 export const deleteReceiptUseCase = new DeleteReceiptUseCase(receiptRepository);
 
-export { authRepository, cattleRepository, milkingRepository, receiptRepository };
+export const getStockItemsUseCase = new GetStockItemsUseCase(stockRepository);
+export const addStockItemUseCase = new AddStockItemUseCase(stockRepository);
+export const refillStockUseCase = new RefillStockUseCase(stockRepository);
+export const deleteStockItemUseCase = new DeleteStockItemUseCase(stockRepository);
+export const recordFeedUsageUseCase = new RecordFeedUsageUseCase(stockRepository);
+export const getFeedUsageHistoryUseCase = new GetFeedUsageHistoryUseCase(stockRepository);
+
+export { authRepository, cattleRepository, milkingRepository, receiptRepository, stockRepository };

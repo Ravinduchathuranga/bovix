@@ -1,0 +1,98 @@
+name: Bovix Scheduled Database Backup
+
+on:
+  # ── Weekly backup: Every Sunday at 02:00 UTC ──────────────
+  schedule:
+    - cron: "0 2 * * 0"
+
+  # ── Manual trigger (for on-demand backups) ─────────────────
+  workflow_dispatch:
+    inputs:
+      source_env:
+        description: "Source environment to backup from"
+        required: false
+        default: "production"
+        type: choice
+        options:
+          - production
+          - test
+
+jobs:
+  backup-to-json:
+    name: Export Firestore to JSON
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install Script Dependencies
+        working-directory: scripts
+        run: npm install
+
+      - name: Write Service Account Key
+        working-directory: scripts
+        run: echo '${{ secrets.FIREBASE_PROD_SERVICE_ACCOUNT }}' > service-account-prod.json
+
+      - name: Run JSON Backup
+        working-directory: scripts
+        env:
+          FIRESTORE_SOURCE: ${{ github.event.inputs.source_env || 'production' }}
+        run: npx ts-node backup-to-json.ts
+
+      - name: Upload Backup as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: firestore-backup-${{ github.run_id }}
+          path: backups/*.json
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Backup Summary
+        run: |
+          echo "## Backup Completed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Source**: ${{ github.event.inputs.source_env || 'production' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Timestamp**: $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Retention**: 90 days" >> $GITHUB_STEP_SUMMARY
+          echo "- **Artifact**: firestore-backup-${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
+
+  backup-cross-project:
+    name: Mirror to Backup Firestore
+    runs-on: ubuntu-latest
+    needs: backup-to-json
+
+    steps:
+      - name: Checkout Code Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install Script Dependencies
+        working-directory: scripts
+        run: npm install
+
+      - name: Write Service Account Keys
+        working-directory: scripts
+        run: |
+          echo '${{ secrets.FIREBASE_PROD_SERVICE_ACCOUNT }}' > service-account-prod.json
+          echo '${{ secrets.FIREBASE_BACKUP_SERVICE_ACCOUNT }}' > service-account-backup.json
+
+      - name: Run Cross-Project Backup
+        working-directory: scripts
+        run: npx ts-node backup-firestore.ts
+
+      - name: Cleanup Service Account Keys
+        if: always()
+        working-directory: scripts
+        run: rm -f service-account-*.json

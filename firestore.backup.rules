@@ -1,0 +1,18 @@
+rules_version = '2';
+
+// ─────────────────────────────────────────────────────────────
+// Bovix — BACKUP Firestore Security Rules
+// Deploy to: bovix-backup
+// ─────────────────────────────────────────────────────────────
+// Fully locked down. No client-side reads or writes allowed.
+// Only the Firebase Admin SDK (used by backup/restore scripts)
+// can access this database, as Admin SDK bypasses security rules.
+// ─────────────────────────────────────────────────────────────
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
