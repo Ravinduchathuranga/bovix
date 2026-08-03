@@ -1,0 +1,19 @@
+{
+  "name": "bovix-db-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Bovix Firestore backup, restore, and seeding scripts",
+  "scripts": {
+    "backup": "ts-node backup-firestore.ts",
+    "backup:json": "ts-node backup-to-json.ts",
+    "restore": "ts-node restore-firestore.ts",
+    "seed-test": "FIRESTORE_TARGET=test ts-node restore-firestore.ts"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.0"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "~6.0.3"
+  }
+}
