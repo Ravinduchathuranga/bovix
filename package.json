@@ -32,7 +32,10 @@
     "db:backup": "cd scripts && npx ts-node backup-firestore.ts",
     "db:backup:json": "cd scripts && npx ts-node backup-to-json.ts",
     "db:restore": "cd scripts && npx ts-node restore-firestore.ts",
-    "db:seed-test": "cd scripts && FIRESTORE_TARGET=test npx ts-node restore-firestore.ts"
+    "db:seed-test": "cd scripts && FIRESTORE_TARGET=test npx ts-node restore-firestore.ts",
+    "db:deploy-rules:prod": "npx firebase deploy --only firestore:rules --config firebase.json --project bovix-prod",
+    "db:deploy-rules:test": "npx firebase deploy --only firestore:rules --config firebase.test.json --project bovix-test",
+    "db:deploy-rules:backup": "npx firebase deploy --only firestore:rules --config firebase.backup.json --project bovix-backup"
   },
   "private": true,
   "devDependencies": {
