@@ -459,77 +459,82 @@ export const AddCattleScreen: React.FC<AddCattleScreenProps> = ({ onCattleAdded,
         transparent
         onRequestClose={() => setShowBreedModal(false)}
       >
-        <View style={styles.breedModalOverlay}>
-          <View style={styles.breedModalContent}>
-            <View style={styles.breedModalHeader}>
-              <Text style={styles.breedModalTitle}>Select Cattle Breed</Text>
-              <TouchableOpacity onPress={() => setShowBreedModal(false)}>
-                <Text style={styles.breedModalCloseText}>✕</Text>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={{ flex: 1 }}
+        >
+          <View style={styles.breedModalOverlay}>
+            <View style={styles.breedModalContent}>
+              <View style={styles.breedModalHeader}>
+                <Text style={styles.breedModalTitle}>Select Cattle Breed</Text>
+                <TouchableOpacity onPress={() => setShowBreedModal(false)}>
+                  <Text style={styles.breedModalCloseText}>✕</Text>
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false}>
+                {BREED_CATEGORIES.map((group) => (
+                  <View key={group.category} style={styles.breedGroup}>
+                    <Text style={styles.breedGroupTitle}>
+                      {group.icon} {group.category}
+                    </Text>
+                    {group.breeds.map((b) => {
+                      const isSelected = breed === b;
+                      return (
+                        <TouchableOpacity
+                          key={b}
+                          style={[
+                            styles.breedOption,
+                            isSelected && styles.breedOptionSelected,
+                          ]}
+                          onPress={() => {
+                            setBreed(b);
+                            if (b !== 'Other') {
+                              setShowBreedModal(false);
+                            }
+                          }}
+                          activeOpacity={0.7}
+                        >
+                          <Text
+                            style={[
+                              styles.breedOptionText,
+                              isSelected && styles.breedOptionTextSelected,
+                            ]}
+                          >
+                            {b}
+                          </Text>
+                          {isSelected && <Text style={styles.checkIcon}>✓</Text>}
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                ))}
+
+                {breed === 'Other' && (
+                  <View style={styles.customBreedInputContainer}>
+                    <Text style={styles.inputLabel}>Specify Custom Breed Name</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="e.g. Gir / Brown Swiss"
+                      placeholderTextColor="#666"
+                      value={customBreed}
+                      onChangeText={setCustomBreed}
+                      autoFocus
+                    />
+                  </View>
+                )}
+              </ScrollView>
+
+              <TouchableOpacity
+                style={styles.doneBreedBtn}
+                onPress={() => setShowBreedModal(false)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.doneBreedBtnText}>Done / Select</Text>
               </TouchableOpacity>
             </View>
-
-            <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false}>
-              {BREED_CATEGORIES.map((group) => (
-                <View key={group.category} style={styles.breedGroup}>
-                  <Text style={styles.breedGroupTitle}>
-                    {group.icon} {group.category}
-                  </Text>
-                  {group.breeds.map((b) => {
-                    const isSelected = breed === b;
-                    return (
-                      <TouchableOpacity
-                        key={b}
-                        style={[
-                          styles.breedOption,
-                          isSelected && styles.breedOptionSelected,
-                        ]}
-                        onPress={() => {
-                          setBreed(b);
-                          if (b !== 'Other') {
-                            setShowBreedModal(false);
-                          }
-                        }}
-                        activeOpacity={0.7}
-                      >
-                        <Text
-                          style={[
-                            styles.breedOptionText,
-                            isSelected && styles.breedOptionTextSelected,
-                          ]}
-                        >
-                          {b}
-                        </Text>
-                        {isSelected && <Text style={styles.checkIcon}>✓</Text>}
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              ))}
-
-              {breed === 'Other' && (
-                <View style={styles.customBreedInputContainer}>
-                  <Text style={styles.inputLabel}>Specify Custom Breed Name</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="e.g. Gir / Brown Swiss"
-                    placeholderTextColor="#666"
-                    value={customBreed}
-                    onChangeText={setCustomBreed}
-                    autoFocus
-                  />
-                </View>
-              )}
-            </ScrollView>
-
-            <TouchableOpacity
-              style={styles.doneBreedBtn}
-              onPress={() => setShowBreedModal(false)}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.doneBreedBtnText}>Done / Select</Text>
-            </TouchableOpacity>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
       </KeyboardAvoidingView>
     </SafeAreaView>
