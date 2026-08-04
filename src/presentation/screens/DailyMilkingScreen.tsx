@@ -442,208 +442,218 @@ export const DailyMilkingScreen: React.FC<DailyMilkingScreenProps> = ({ onOpenDr
 
       {/* Modal 1: Logging Bulk Milk */}
       <Modal visible={milkModalVisible} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Log Bulk Milk Collection</Text>
-            <Text style={styles.modalSubtitle}>Save collected milk in Kilograms (KG)</Text>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={{ flex: 1 }}
+        >
+          <View style={styles.modalOverlay}>
+            <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+              <Text style={styles.modalTitle}>Log Bulk Milk Collection</Text>
+              <Text style={styles.modalSubtitle}>Save collected milk in Kilograms (KG)</Text>
 
-            <AppDatePicker
-              label="Collection Date *"
-              value={recordDate}
-              onChange={setRecordDate}
-              showPresets={true}
-            />
+              <AppDatePicker
+                label="Collection Date *"
+                value={recordDate}
+                onChange={setRecordDate}
+                showPresets={true}
+              />
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Collection Session</Text>
-              <View style={styles.sessionToggleRow}>
-                <TouchableOpacity
-                  style={[
-                    styles.sessionToggleBtn,
-                    session === 'Morning' && styles.sessionToggleActive,
-                  ]}
-                  onPress={() => setSession('Morning')}
-                >
-                  <Text
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Collection Session</Text>
+                <View style={styles.sessionToggleRow}>
+                  <TouchableOpacity
                     style={[
-                      styles.sessionToggleText,
-                      session === 'Morning' && styles.sessionToggleTextActive,
+                      styles.sessionToggleBtn,
+                      session === 'Morning' && styles.sessionToggleActive,
                     ]}
+                    onPress={() => setSession('Morning')}
                   >
-                    🌅 Morning
-                  </Text>
+                    <Text
+                      style={[
+                        styles.sessionToggleText,
+                        session === 'Morning' && styles.sessionToggleTextActive,
+                      ]}
+                    >
+                      🌅 Morning
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.sessionToggleBtn,
+                      session === 'Evening' && styles.sessionToggleActive,
+                    ]}
+                    onPress={() => setSession('Evening')}
+                  >
+                    <Text
+                      style={[
+                        styles.sessionToggleText,
+                        session === 'Evening' && styles.sessionToggleTextActive,
+                      ]}
+                    >
+                      🌆 Evening
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Milk Amount (KG) *</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="e.g. 145.5"
+                  placeholderTextColor="#999"
+                  keyboardType="numeric"
+                  value={amountKg}
+                  onChangeText={setAmountKg}
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Notes / Tank ID (Optional)</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="e.g. Tank 1 Morning Batch"
+                  placeholderTextColor="#999"
+                  value={milkNotes}
+                  onChangeText={setMilkNotes}
+                />
+              </View>
+
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={styles.cancelBtn}
+                  onPress={() => setMilkModalVisible(false)}
+                >
+                  <Text style={styles.cancelBtnText}>Cancel</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={[
-                    styles.sessionToggleBtn,
-                    session === 'Evening' && styles.sessionToggleActive,
-                  ]}
-                  onPress={() => setSession('Evening')}
+                  style={styles.submitBtn}
+                  onPress={handleSaveBulkMilk}
+                  disabled={savingMilk}
                 >
-                  <Text
-                    style={[
-                      styles.sessionToggleText,
-                      session === 'Evening' && styles.sessionToggleTextActive,
-                    ]}
-                  >
-                    🌆 Evening
-                  </Text>
+                  {savingMilk ? (
+                    <ActivityIndicator color="#FFF" />
+                  ) : (
+                    <Text style={styles.submitBtnText}>Save Entry</Text>
+                  )}
                 </TouchableOpacity>
               </View>
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Milk Amount (KG) *</Text>
-              <TextInput
-                style={styles.modalInput}
-                placeholder="e.g. 145.5"
-                placeholderTextColor="#999"
-                keyboardType="numeric"
-                value={amountKg}
-                onChangeText={setAmountKg}
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Notes / Tank ID (Optional)</Text>
-              <TextInput
-                style={styles.modalInput}
-                placeholder="e.g. Tank 1 Morning Batch"
-                placeholderTextColor="#999"
-                value={milkNotes}
-                onChangeText={setMilkNotes}
-              />
-            </View>
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={styles.cancelBtn}
-                onPress={() => setMilkModalVisible(false)}
-              >
-                <Text style={styles.cancelBtnText}>Cancel</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.submitBtn}
-                onPress={handleSaveBulkMilk}
-                disabled={savingMilk}
-              >
-                {savingMilk ? (
-                  <ActivityIndicator color="#FFF" />
-                ) : (
-                  <Text style={styles.submitBtnText}>Save Entry</Text>
-                )}
-              </TouchableOpacity>
-            </View>
+            </ScrollView>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Modal 2: Adding Company Paper Slip */}
       <Modal visible={slipModalVisible} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Add Company Paper Slip</Text>
-            <Text style={styles.modalSubtitle}>
-              Input actual milk weight received on dairy company's paper scale receipt
-            </Text>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={{ flex: 1 }}
+        >
+          <View style={styles.modalOverlay}>
+            <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+              <Text style={styles.modalTitle}>Add Company Paper Slip</Text>
+              <Text style={styles.modalSubtitle}>
+                Input actual milk weight received on dairy company's paper scale receipt
+              </Text>
 
-            <AppDatePicker
-              label="Slip Date *"
-              value={receiptDate}
-              onChange={setReceiptDate}
-              showPresets={true}
-            />
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Receipt / Slip No. *</Text>
-              <TextInput
-                style={styles.modalInput}
-                placeholder="e.g. REC-88912"
-                placeholderTextColor="#999"
-                value={receiptNumber}
-                onChangeText={setReceiptNumber}
+              <AppDatePicker
+                label="Slip Date *"
+                value={receiptDate}
+                onChange={setReceiptDate}
+                showPresets={true}
               />
-            </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Dairy Company Name</Text>
-              <TextInput
-                style={styles.modalInput}
-                placeholder="e.g. Lactalis Dairy Co."
-                placeholderTextColor="#999"
-                value={companyName}
-                onChangeText={setCompanyName}
-              />
-            </View>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Receipt / Slip No. *</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="e.g. REC-88912"
+                  placeholderTextColor="#999"
+                  value={receiptNumber}
+                  onChangeText={setReceiptNumber}
+                />
+              </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Company Scale Weight (KG) *</Text>
-              <TextInput
-                style={styles.modalInput}
-                placeholder="e.g. 278.0"
-                placeholderTextColor="#999"
-                keyboardType="numeric"
-                value={companyScaleKg}
-                onChangeText={setCompanyScaleKg}
-              />
-            </View>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Dairy Company Name</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="e.g. Lactalis Dairy Co."
+                  placeholderTextColor="#999"
+                  value={companyName}
+                  onChangeText={setCompanyName}
+                />
+              </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Company Tested Fat (%) (Optional)</Text>
-              <TextInput
-                style={styles.modalInput}
-                placeholder="e.g. 4.2"
-                placeholderTextColor="#999"
-                keyboardType="numeric"
-                value={fatPercentage}
-                onChangeText={setFatPercentage}
-              />
-            </View>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Company Scale Weight (KG) *</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="e.g. 278.0"
+                  placeholderTextColor="#999"
+                  keyboardType="numeric"
+                  value={companyScaleKg}
+                  onChangeText={setCompanyScaleKg}
+                />
+              </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Price per KG ($) (Optional)</Text>
-              <TextInput
-                style={styles.modalInput}
-                placeholder="e.g. 0.85"
-                placeholderTextColor="#999"
-                keyboardType="numeric"
-                value={pricePerKg}
-                onChangeText={setPricePerKg}
-              />
-            </View>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Company Tested Fat (%) (Optional)</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="e.g. 4.2"
+                  placeholderTextColor="#999"
+                  keyboardType="numeric"
+                  value={fatPercentage}
+                  onChangeText={setFatPercentage}
+                />
+              </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Notes / Quality Remarks (Optional)</Text>
-              <TextInput
-                style={styles.modalInput}
-                placeholder="e.g. Received without spillages"
-                placeholderTextColor="#999"
-                value={slipNotes}
-                onChangeText={setSlipNotes}
-              />
-            </View>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Price per KG ($) (Optional)</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="e.g. 0.85"
+                  placeholderTextColor="#999"
+                  keyboardType="numeric"
+                  value={pricePerKg}
+                  onChangeText={setPricePerKg}
+                />
+              </View>
 
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.cancelBtn} onPress={() => setSlipModalVisible(false)}>
-                <Text style={styles.cancelBtnText}>Cancel</Text>
-              </TouchableOpacity>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Notes / Quality Remarks (Optional)</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="e.g. Received without spillages"
+                  placeholderTextColor="#999"
+                  value={slipNotes}
+                  onChangeText={setSlipNotes}
+                />
+              </View>
 
-              <TouchableOpacity
-                style={styles.submitBtn}
-                onPress={handleSaveReceipt}
-                disabled={savingSlip}
-              >
-                {savingSlip ? (
-                  <ActivityIndicator color="#FFF" />
-                ) : (
-                  <Text style={styles.submitBtnText}>Compare Slip</Text>
-                )}
-              </TouchableOpacity>
-            </View>
+              <View style={styles.modalActions}>
+                <TouchableOpacity style={styles.cancelBtn} onPress={() => setSlipModalVisible(false)}>
+                  <Text style={styles.cancelBtnText}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.submitBtn}
+                  onPress={handleSaveReceipt}
+                  disabled={savingSlip}
+                >
+                  {savingSlip ? (
+                    <ActivityIndicator color="#FFF" />
+                  ) : (
+                    <Text style={styles.submitBtnText}>Compare Slip</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
       </KeyboardAvoidingView>
     </SafeAreaView>
