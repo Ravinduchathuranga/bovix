@@ -42,9 +42,13 @@ export class FirestoreCattleRepository implements CattleRepository {
     }
   }
 
-  async addCattle(cattleData: Omit<Cattle, 'id'>): Promise<Cattle> {
-    const id = `cow_${Date.now()}`;
-    const newCattle: Cattle = { ...cattleData, id };
+  async addCattle(cattleData: Omit<Cattle, 'id'> & { id?: string }): Promise<Cattle> {
+    const id = cattleData.id || `cow_${Date.now()}`;
+    const newCattle: Cattle = {
+      ...cattleData,
+      id,
+      updatedAt: cattleData.updatedAt || new Date().toISOString(),
+    };
     try {
       const docData = Object.fromEntries(
         Object.entries(newCattle).filter(([_, v]) => v !== undefined)
@@ -58,17 +62,21 @@ export class FirestoreCattleRepository implements CattleRepository {
   }
 
   async updateCattle(cattle: Cattle): Promise<Cattle> {
+    const updatedCattle: Cattle = {
+      ...cattle,
+      updatedAt: new Date().toISOString(),
+    };
     try {
-      const docRef = doc(db, this.collectionName, cattle.id);
+      const docRef = doc(db, this.collectionName, updatedCattle.id);
       const docData = Object.fromEntries(
-        Object.entries(cattle).filter(([_, v]) => v !== undefined)
+        Object.entries(updatedCattle).filter(([_, v]) => v !== undefined)
       );
       await updateDoc(docRef, docData);
     } catch (err) {
       console.error('Firestore update error:', err);
       throw err;
     }
-    return cattle;
+    return updatedCattle;
   }
 
   async deleteCattle(id: string): Promise<void> {
