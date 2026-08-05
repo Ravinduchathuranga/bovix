@@ -15,6 +15,7 @@ export interface Cattle {
   images?: string[];
   medicalHistory: string;
   calvesDelivered: number;
+  updatedAt?: string;
 }
 
 export interface User {
