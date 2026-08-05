@@ -9,6 +9,8 @@ import {
   Modal,
   TextInput,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -200,7 +202,11 @@ export const StockManagementScreen: React.FC<StockManagementScreenProps> = () =>
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header Bar */}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        {/* Header Bar */}
       <View style={styles.header}>
         <View>
           <Text style={styles.headerTitle}>Farm Stock & Feed</Text>
@@ -400,251 +406,267 @@ export const StockManagementScreen: React.FC<StockManagementScreenProps> = () =>
 
       {/* Modal 1: Add Stock Item */}
       <Modal visible={addModalVisible} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
-            <Text style={styles.modalTitle}>Add Feed to Inventory</Text>
-            <Text style={styles.modalSubtitle}>Enter cow feed details and initial stock quantity</Text>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={{ flex: 1 }}
+        >
+          <View style={styles.modalOverlay}>
+            <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+              <Text style={styles.modalTitle}>Add Feed to Inventory</Text>
+              <Text style={styles.modalSubtitle}>Enter cow feed details and initial stock quantity</Text>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Feed Name *</Text>
-              <TextInput
-                style={styles.modalInput}
-                placeholder="e.g. Napier Grass Silage Batch #2"
-                placeholderTextColor="#999"
-                value={name}
-                onChangeText={setName}
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Category</Text>
-              <View style={styles.categoryToggleRow}>
-                {(['Silage', 'Concentrate', 'Forage', 'Supplement', 'Other'] as FeedCategory[]).map(
-                  (c) => (
-                    <TouchableOpacity
-                      key={c}
-                      style={[styles.catToggleBtn, category === c && styles.catToggleActive]}
-                      onPress={() => setCategory(c)}
-                    >
-                      <Text style={[styles.catToggleText, category === c && styles.catToggleTextActive]}>
-                        {c}
-                      </Text>
-                    </TouchableOpacity>
-                  )
-                )}
-              </View>
-            </View>
-
-            <View style={styles.rowTwoInputs}>
-              <View style={[styles.inputGroup, { flex: 1 }]}>
-                <Text style={styles.inputLabel}>Initial Quantity *</Text>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Feed Name *</Text>
                 <TextInput
                   style={styles.modalInput}
-                  placeholder="e.g. 1500"
+                  placeholder="e.g. Napier Grass Silage Batch #2"
                   placeholderTextColor="#999"
-                  keyboardType="numeric"
-                  value={currentStockKg}
-                  onChangeText={setCurrentStockKg}
+                  value={name}
+                  onChangeText={setName}
                 />
               </View>
 
-              <View style={[styles.inputGroup, { width: 100 }]}>
-                <Text style={styles.inputLabel}>Unit</Text>
-                <View style={styles.unitRow}>
-                  {(['KG', 'Bags', 'Tons'] as FeedUnit[]).map((u) => (
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Category</Text>
+                <View style={styles.categoryToggleRow}>
+                  {(['Silage', 'Concentrate', 'Forage', 'Supplement', 'Other'] as FeedCategory[]).map(
+                    (c) => (
+                      <TouchableOpacity
+                        key={c}
+                        style={[styles.catToggleBtn, category === c && styles.catToggleActive]}
+                        onPress={() => setCategory(c)}
+                      >
+                        <Text style={[styles.catToggleText, category === c && styles.catToggleTextActive]}>
+                          {c}
+                        </Text>
+                      </TouchableOpacity>
+                    )
+                  )}
+                </View>
+              </View>
+
+              <View style={styles.rowTwoInputs}>
+                <View style={[styles.inputGroup, { flex: 1 }]}>
+                  <Text style={styles.inputLabel}>Initial Quantity *</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    placeholder="e.g. 1500"
+                    placeholderTextColor="#999"
+                    keyboardType="numeric"
+                    value={currentStockKg}
+                    onChangeText={setCurrentStockKg}
+                  />
+                </View>
+
+                <View style={[styles.inputGroup, { width: 100 }]}>
+                  <Text style={styles.inputLabel}>Unit</Text>
+                  <View style={styles.unitRow}>
+                    {(['KG', 'Bags', 'Tons'] as FeedUnit[]).map((u) => (
+                      <TouchableOpacity
+                        key={u}
+                        style={[styles.unitBtn, unit === u && styles.unitBtnActive]}
+                        onPress={() => setUnit(u)}
+                      >
+                        <Text style={[styles.unitBtnText, unit === u && styles.unitBtnTextActive]}>
+                          {u}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.rowTwoInputs}>
+                <View style={[styles.inputGroup, { flex: 1 }]}>
+                  <Text style={styles.inputLabel}>Min Alert Threshold</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    placeholder="e.g. 200"
+                    placeholderTextColor="#999"
+                    keyboardType="numeric"
+                    value={minThresholdKg}
+                    onChangeText={setMinThresholdKg}
+                  />
+                </View>
+
+                <View style={[styles.inputGroup, { flex: 1 }]}>
+                  <Text style={styles.inputLabel}>Price / Unit (RS)</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    placeholder="e.g. 45"
+                    placeholderTextColor="#999"
+                    keyboardType="numeric"
+                    value={costPerUnit}
+                    onChangeText={setCostPerUnit}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Supplier / Brand (Optional)</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="e.g. Agro Feeds Ltd."
+                  placeholderTextColor="#999"
+                  value={supplierName}
+                  onChangeText={setSupplierName}
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Notes / Batch Info (Optional)</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="e.g. Stored in Shed 3"
+                  placeholderTextColor="#999"
+                  value={notes}
+                  onChangeText={setNotes}
+                />
+              </View>
+
+              <View style={styles.modalActions}>
+                <TouchableOpacity style={styles.cancelBtn} onPress={() => setAddModalVisible(false)}>
+                  <Text style={styles.cancelBtnText}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.submitBtn} onPress={handleAddStock} disabled={savingAdd}>
+                  {savingAdd ? <ActivityIndicator color="#FFF" /> : <Text style={styles.submitBtnText}>Add Feed</Text>}
+                </TouchableOpacity>
+              </View>
+              <View style={{ height: 24 }} />
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Modal 2: Refill Stock */}
+      <Modal visible={refillModalVisible} animationType="slide" transparent>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={{ flex: 1 }}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Refill Feed Stock</Text>
+              <Text style={styles.modalSubtitle}>
+                Adding incoming inventory for "{targetItem?.name}"
+              </Text>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Refill Amount ({targetItem?.unit || 'KG'}) *</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="e.g. 500"
+                  placeholderTextColor="#999"
+                  keyboardType="numeric"
+                  value={refillAmount}
+                  onChangeText={setRefillAmount}
+                />
+              </View>
+
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={styles.cancelBtn}
+                  onPress={() => {
+                    setRefillModalVisible(false);
+                    setTargetItem(null);
+                  }}
+                >
+                  <Text style={styles.cancelBtnText}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.submitBtn}
+                  onPress={handleRefillStock}
+                  disabled={savingRefill}
+                >
+                  {savingRefill ? <ActivityIndicator color="#FFF" /> : <Text style={styles.submitBtnText}>Confirm Refill</Text>}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Modal 3: Log Feed Usage */}
+      <Modal visible={usageModalVisible} animationType="slide" transparent>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={{ flex: 1 }}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Log Daily Feed Usage</Text>
+              <Text style={styles.modalSubtitle}>
+                Record feed consumed for "{targetItem?.name}"
+              </Text>
+
+              <AppDatePicker label="Consumption Date *" value={usageDate} onChange={setUsageDate} />
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Session</Text>
+                <View style={styles.sessionRow}>
+                  {(['Morning', 'Evening', 'Full Day'] as const).map((s) => (
                     <TouchableOpacity
-                      key={u}
-                      style={[styles.unitBtn, unit === u && styles.unitBtnActive]}
-                      onPress={() => setUnit(u)}
+                      key={s}
+                      style={[styles.sessionBtn, usageSession === s && styles.sessionBtnActive]}
+                      onPress={() => setUsageSession(s)}
                     >
-                      <Text style={[styles.unitBtnText, unit === u && styles.unitBtnTextActive]}>
-                        {u}
+                      <Text style={[styles.sessionBtnText, usageSession === s && styles.sessionBtnTextActive]}>
+                        {s}
                       </Text>
                     </TouchableOpacity>
                   ))}
                 </View>
               </View>
-            </View>
 
-            <View style={styles.rowTwoInputs}>
-              <View style={[styles.inputGroup, { flex: 1 }]}>
-                <Text style={styles.inputLabel}>Min Alert Threshold</Text>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Amount Used ({targetItem?.unit || 'KG'}) *</Text>
                 <TextInput
                   style={styles.modalInput}
-                  placeholder="e.g. 200"
+                  placeholder="e.g. 120"
                   placeholderTextColor="#999"
                   keyboardType="numeric"
-                  value={minThresholdKg}
-                  onChangeText={setMinThresholdKg}
+                  value={usedAmount}
+                  onChangeText={setUsedAmount}
                 />
               </View>
 
-              <View style={[styles.inputGroup, { flex: 1 }]}>
-                <Text style={styles.inputLabel}>Price / Unit (RS)</Text>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Notes (Optional)</Text>
                 <TextInput
                   style={styles.modalInput}
-                  placeholder="e.g. 45"
+                  placeholder="e.g. Fed to lactating cows"
                   placeholderTextColor="#999"
-                  keyboardType="numeric"
-                  value={costPerUnit}
-                  onChangeText={setCostPerUnit}
+                  value={usageNotes}
+                  onChangeText={setUsageNotes}
                 />
               </View>
-            </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Supplier / Brand (Optional)</Text>
-              <TextInput
-                style={styles.modalInput}
-                placeholder="e.g. Agro Feeds Ltd."
-                placeholderTextColor="#999"
-                value={supplierName}
-                onChangeText={setSupplierName}
-              />
-            </View>
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={styles.cancelBtn}
+                  onPress={() => {
+                    setUsageModalVisible(false);
+                    setTargetItem(null);
+                  }}
+                >
+                  <Text style={styles.cancelBtnText}>Cancel</Text>
+                </TouchableOpacity>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Notes / Batch Info (Optional)</Text>
-              <TextInput
-                style={styles.modalInput}
-                placeholder="e.g. Stored in Shed 3"
-                placeholderTextColor="#999"
-                value={notes}
-                onChangeText={setNotes}
-              />
-            </View>
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.cancelBtn} onPress={() => setAddModalVisible(false)}>
-                <Text style={styles.cancelBtnText}>Cancel</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.submitBtn} onPress={handleAddStock} disabled={savingAdd}>
-                {savingAdd ? <ActivityIndicator color="#FFF" /> : <Text style={styles.submitBtnText}>Add Feed</Text>}
-              </TouchableOpacity>
-            </View>
-            <View style={{ height: 24 }} />
-          </ScrollView>
-        </View>
-      </Modal>
-
-      {/* Modal 2: Refill Stock */}
-      <Modal visible={refillModalVisible} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Refill Feed Stock</Text>
-            <Text style={styles.modalSubtitle}>
-              Adding incoming inventory for "{targetItem?.name}"
-            </Text>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Refill Amount ({targetItem?.unit || 'KG'}) *</Text>
-              <TextInput
-                style={styles.modalInput}
-                placeholder="e.g. 500"
-                placeholderTextColor="#999"
-                keyboardType="numeric"
-                value={refillAmount}
-                onChangeText={setRefillAmount}
-              />
-            </View>
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={styles.cancelBtn}
-                onPress={() => {
-                  setRefillModalVisible(false);
-                  setTargetItem(null);
-                }}
-              >
-                <Text style={styles.cancelBtnText}>Cancel</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.submitBtn}
-                onPress={handleRefillStock}
-                disabled={savingRefill}
-              >
-                {savingRefill ? <ActivityIndicator color="#FFF" /> : <Text style={styles.submitBtnText}>Confirm Refill</Text>}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Modal 3: Log Feed Usage */}
-      <Modal visible={usageModalVisible} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Log Daily Feed Usage</Text>
-            <Text style={styles.modalSubtitle}>
-              Record feed consumed for "{targetItem?.name}"
-            </Text>
-
-            <AppDatePicker label="Consumption Date *" value={usageDate} onChange={setUsageDate} />
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Session</Text>
-              <View style={styles.sessionRow}>
-                {(['Morning', 'Evening', 'Full Day'] as const).map((s) => (
-                  <TouchableOpacity
-                    key={s}
-                    style={[styles.sessionBtn, usageSession === s && styles.sessionBtnActive]}
-                    onPress={() => setUsageSession(s)}
-                  >
-                    <Text style={[styles.sessionBtnText, usageSession === s && styles.sessionBtnTextActive]}>
-                      {s}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                <TouchableOpacity
+                  style={styles.submitBtn}
+                  onPress={handleLogUsage}
+                  disabled={savingUsage}
+                >
+                  {savingUsage ? <ActivityIndicator color="#FFF" /> : <Text style={styles.submitBtnText}>Deduct & Log</Text>}
+                </TouchableOpacity>
               </View>
             </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Amount Used ({targetItem?.unit || 'KG'}) *</Text>
-              <TextInput
-                style={styles.modalInput}
-                placeholder="e.g. 120"
-                placeholderTextColor="#999"
-                keyboardType="numeric"
-                value={usedAmount}
-                onChangeText={setUsedAmount}
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Notes (Optional)</Text>
-              <TextInput
-                style={styles.modalInput}
-                placeholder="e.g. Fed to lactating cows"
-                placeholderTextColor="#999"
-                value={usageNotes}
-                onChangeText={setUsageNotes}
-              />
-            </View>
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={styles.cancelBtn}
-                onPress={() => {
-                  setUsageModalVisible(false);
-                  setTargetItem(null);
-                }}
-              >
-                <Text style={styles.cancelBtnText}>Cancel</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.submitBtn}
-                onPress={handleLogUsage}
-                disabled={savingUsage}
-              >
-                {savingUsage ? <ActivityIndicator color="#FFF" /> : <Text style={styles.submitBtnText}>Deduct & Log</Text>}
-              </TouchableOpacity>
-            </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
