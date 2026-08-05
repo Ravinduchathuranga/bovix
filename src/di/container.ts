@@ -29,9 +29,22 @@ import {
   GetFeedUsageHistoryUseCase,
 } from '../domain/usecases/StockUseCases';
 
+import { NetworkMonitor, CattleCache, SyncQueue, SyncEngine } from '../data/offline';
+import { OfflineFirstCattleRepository } from '../data/repositories/OfflineFirstCattleRepository';
+
 // Singletons / Repositories
 const authRepository = new FirebaseAuthRepository();
-const cattleRepository = new FirestoreCattleRepository();
+const firestoreCattleRepository = new FirestoreCattleRepository();
+const networkMonitor = new NetworkMonitor();
+const cattleCache = new CattleCache();
+const syncQueue = new SyncQueue();
+const syncEngine = new SyncEngine(syncQueue, cattleCache, firestoreCattleRepository, networkMonitor);
+const cattleRepository = new OfflineFirstCattleRepository(
+  firestoreCattleRepository,
+  cattleCache,
+  syncQueue,
+  networkMonitor
+);
 const milkingRepository = new FirestoreMilkingRepository();
 const receiptRepository = new FirestoreReceiptRepository(milkingRepository);
 const stockRepository = new FirestoreStockRepository();
