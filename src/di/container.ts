@@ -29,8 +29,22 @@ import {
   GetFeedUsageHistoryUseCase,
 } from '../domain/usecases/StockUseCases';
 
-import { NetworkMonitor, CattleCache, SyncQueue, SyncEngine } from '../data/offline';
+import {
+  NetworkMonitor,
+  CattleCache,
+  SyncQueue,
+  SyncEngine,
+  MilkingCache,
+  MilkingSyncQueue,
+  MilkingSyncEngine,
+  StockItemCache,
+  StockUsageCache,
+  StockSyncQueue,
+  StockSyncEngine,
+} from '../data/offline';
 import { OfflineFirstCattleRepository } from '../data/repositories/OfflineFirstCattleRepository';
+import { OfflineFirstMilkingRepository } from '../data/repositories/OfflineFirstMilkingRepository';
+import { OfflineFirstStockRepository } from '../data/repositories/OfflineFirstStockRepository';
 
 // Singletons / Repositories
 const authRepository = new FirebaseAuthRepository();
@@ -45,9 +59,42 @@ const cattleRepository = new OfflineFirstCattleRepository(
   syncQueue,
   networkMonitor
 );
-const milkingRepository = new FirestoreMilkingRepository();
+
+const firestoreMilkingRepository = new FirestoreMilkingRepository();
+const milkingCache = new MilkingCache();
+const milkingSyncQueue = new MilkingSyncQueue();
+const milkingSyncEngine = new MilkingSyncEngine(
+  milkingSyncQueue,
+  milkingCache,
+  firestoreMilkingRepository,
+  networkMonitor
+);
+const milkingRepository = new OfflineFirstMilkingRepository(
+  firestoreMilkingRepository,
+  milkingCache,
+  milkingSyncQueue,
+  networkMonitor
+);
 const receiptRepository = new FirestoreReceiptRepository(milkingRepository);
-const stockRepository = new FirestoreStockRepository();
+
+const firestoreStockRepository = new FirestoreStockRepository();
+const stockItemCache = new StockItemCache();
+const stockUsageCache = new StockUsageCache();
+const stockSyncQueue = new StockSyncQueue();
+const stockSyncEngine = new StockSyncEngine(
+  stockSyncQueue,
+  stockItemCache,
+  stockUsageCache,
+  firestoreStockRepository,
+  networkMonitor
+);
+const stockRepository = new OfflineFirstStockRepository(
+  firestoreStockRepository,
+  stockItemCache,
+  stockUsageCache,
+  stockSyncQueue,
+  networkMonitor
+);
 
 export const loginUseCase = new LoginUseCase(authRepository);
 export const googleLoginUseCase = new GoogleLoginUseCase(authRepository);
