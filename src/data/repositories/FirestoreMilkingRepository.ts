@@ -31,12 +31,14 @@ export class FirestoreMilkingRepository implements MilkingRepository {
     return all.filter((r) => r.date === date);
   }
 
-  async recordBulkMilk(recordData: Omit<BulkMilkRecord, 'id' | 'createdAt'>): Promise<BulkMilkRecord> {
-    const id = `blk_${Date.now()}`;
+  async recordBulkMilk(
+    recordData: Omit<BulkMilkRecord, 'id' | 'createdAt'> & { id?: string; createdAt?: string }
+  ): Promise<BulkMilkRecord> {
+    const id = recordData.id || `blk_${Date.now()}`;
     const newRecord: BulkMilkRecord = {
       ...recordData,
       id,
-      createdAt: new Date().toISOString(),
+      createdAt: recordData.createdAt || new Date().toISOString(),
     };
     try {
       const docData = Object.fromEntries(
