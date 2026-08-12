@@ -119,7 +119,7 @@ describe('StockSyncEngine', () => {
     const remoteNewerItem: FeedStockItem = {
       ...mockItem,
       currentStockKg: 1500,
-      updatedAt: '2026-08-10T15:00:00.000Z', // newer than local op timestamp
+      updatedAt: '2099-01-01T15:00:00.000Z', // always in the future relative to test run
     };
 
     mockFirestore.getStockItems.mockResolvedValue([remoteNewerItem]);

@@ -61,8 +61,8 @@ export function initFirestoreAdmin(env: Environment): FirestoreInstance {
   if (!fs.existsSync(serviceAccountPath)) {
     throw new Error(
       `Service account file not found: ${serviceAccountPath}\n` +
-        `Download it from Firebase Console → Project Settings → Service Accounts → Generate new private key.\n` +
-        `Save it as: scripts/service-account-${env === 'production' ? 'prod' : env}.json`
+      `Download it from Firebase Console → Project Settings → Service Accounts → Generate new private key.\n` +
+      `Save it as: scripts/service-account-${env === 'production' ? 'prod' : env}.json`
     );
   }
 
@@ -70,7 +70,7 @@ export function initFirestoreAdmin(env: Environment): FirestoreInstance {
   const appName = `bovix-${env}`;
 
   // Check if the app is already initialized (avoid duplicate init errors)
-  const existingApp = admin.apps.find((a) => a?.name === appName);
+  const existingApp = admin.apps.find((any) => any?.name === appName);
   if (existingApp) {
     return {
       app: existingApp,
