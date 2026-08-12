@@ -29,15 +29,23 @@ export class FirestoreStockRepository implements StockRepository {
   }
 
   async addStockItem(
-    itemData: Omit<FeedStockItem, 'id' | 'createdAt' | 'updatedAt'>
+    itemData: Omit<FeedStockItem, 'id' | 'createdAt' | 'updatedAt'> | FeedStockItem
   ): Promise<FeedStockItem> {
-    const id = `stk_${Date.now()}`;
+    const fullItem = itemData as Partial<FeedStockItem>;
+    const id = fullItem.id || `stk_${Date.now()}`;
     const now = new Date().toISOString();
     const newItem: FeedStockItem = {
-      ...itemData,
+      name: fullItem.name || '',
+      category: fullItem.category || 'Other',
+      currentStockKg: fullItem.currentStockKg || 0,
+      unit: fullItem.unit || 'KG',
+      minThresholdKg: fullItem.minThresholdKg || 50,
+      costPerUnit: fullItem.costPerUnit,
+      supplierName: fullItem.supplierName,
+      notes: fullItem.notes,
       id,
-      createdAt: now,
-      updatedAt: now,
+      createdAt: fullItem.createdAt || now,
+      updatedAt: fullItem.updatedAt || now,
     };
     try {
       const docData = Object.fromEntries(
@@ -55,7 +63,7 @@ export class FirestoreStockRepository implements StockRepository {
     try {
       const docRef = doc(db, this.stockCollection, id);
       const cleanUpdates = Object.fromEntries(
-        Object.entries({ ...updates, updatedAt: new Date().toISOString() }).filter(
+        Object.entries({ ...updates, updatedAt: updates.updatedAt || new Date().toISOString() }).filter(
           ([_, v]) => v !== undefined
         )
       );
@@ -84,13 +92,19 @@ export class FirestoreStockRepository implements StockRepository {
   }
 
   async recordFeedUsage(
-    usageData: Omit<FeedUsageRecord, 'id' | 'createdAt'>
+    usageData: Omit<FeedUsageRecord, 'id' | 'createdAt'> | FeedUsageRecord
   ): Promise<FeedUsageRecord> {
-    const id = `usg_${Date.now()}`;
+    const fullUsage = usageData as Partial<FeedUsageRecord>;
+    const id = fullUsage.id || `usg_${Date.now()}`;
     const newUsage: FeedUsageRecord = {
-      ...usageData,
+      feedStockId: fullUsage.feedStockId || '',
+      feedStockName: fullUsage.feedStockName || '',
+      date: fullUsage.date || new Date().toISOString().split('T')[0],
+      amountUsedKg: fullUsage.amountUsedKg || 0,
+      session: fullUsage.session,
+      notes: fullUsage.notes,
       id,
-      createdAt: new Date().toISOString(),
+      createdAt: fullUsage.createdAt || new Date().toISOString(),
     };
     try {
       const docData = Object.fromEntries(

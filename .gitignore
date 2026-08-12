@@ -41,9 +41,10 @@ yarn-error.*
 # Database backups (JSON snapshots)
 backups/*.json
 
-# Firebase Admin SDK service account keys
-scripts/bovix-backup-firebase-adminsdk-fbsvc-d403e75c31.json
-scripts/bovix-prod-firebase-adminsdk-fbsvc-a209d71f9a.json
+# Firebase Admin SDK service account keys (any pattern)
+scripts/service-account*.json
+scripts/*firebase-adminsdk*.json
+scripts/*-firebase-adminsdk-*.json
 
 # typescript
 *.tsbuildinfo
@@ -51,3 +52,5 @@ scripts/bovix-prod-firebase-adminsdk-fbsvc-a209d71f9a.json
 # generated native folders
 /ios
 /android
+testsprite_tests/tmp/
+testsprite_tests/tmp/config.json
