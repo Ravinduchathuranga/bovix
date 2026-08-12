@@ -16,7 +16,8 @@
  * ─────────────────────────────────────────────────────────────
  */
 
-import * as admin from 'firebase-admin';
+import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
+import { getFirestore, Firestore } from 'firebase-admin/firestore';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -25,8 +26,8 @@ import * as path from 'path';
 export type Environment = 'production' | 'backup' | 'test';
 
 interface FirestoreInstance {
-  app: admin.app.App;
-  db: admin.firestore.Firestore;
+  app: App;
+  db: Firestore;
   env: Environment;
   projectId: string;
 }
@@ -70,19 +71,19 @@ export function initFirestoreAdmin(env: Environment): FirestoreInstance {
   const appName = `bovix-${env}`;
 
   // Check if the app is already initialized (avoid duplicate init errors)
-  const existingApp = admin.apps.find((any) => any?.name === appName);
+  const existingApp = getApps().find((a: any) => a?.name === appName);
   if (existingApp) {
     return {
       app: existingApp,
-      db: existingApp.firestore(),
+      db: getFirestore(existingApp),
       env,
       projectId: serviceAccount.project_id,
     };
   }
 
-  const app = admin.initializeApp(
+  const app = initializeApp(
     {
-      credential: admin.credential.cert(serviceAccount),
+      credential: cert(serviceAccount),
       projectId: serviceAccount.project_id,
     },
     appName
@@ -90,7 +91,7 @@ export function initFirestoreAdmin(env: Environment): FirestoreInstance {
 
   return {
     app,
-    db: app.firestore(),
+    db: getFirestore(app),
     env,
     projectId: serviceAccount.project_id,
   };

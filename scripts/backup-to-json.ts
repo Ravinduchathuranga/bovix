@@ -58,7 +58,7 @@ async function backupToJson(): Promise<void> {
         continue;
       }
 
-      const docs = snapshot.docs.map((doc) => ({
+      const docs = snapshot.docs.map((doc: any) => ({
         _id: doc.id,
         ...doc.data(),
       }));
